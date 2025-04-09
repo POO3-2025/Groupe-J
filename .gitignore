@@ -1,0 +1,36 @@
+# Ignore les fichiers générés par IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+out/
+
+# Ignore les fichiers de compilation Java
+bin/
+*.class
+
+# Ignore les fichiers de logs et runtime
+*.log
+logs/
+nohup.out
+
+# Ignore les dépendances et artefacts de Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Ignore les fichiers de configuration spécifiques à l'environnement
+.env
+application-*.yml
+application-*.properties
+
+# Ignore les fichiers temporaires et caches
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Ignore les fichiers spécifiques aux conteneurs et cloud
+Dockerfile
+*.tar
+*.war
+*.jar
