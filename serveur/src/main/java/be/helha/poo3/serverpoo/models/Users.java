@@ -5,7 +5,7 @@ package be.helha.poo3.serverpoo.models;
  */
 public class Users {
 
-    private int id;
+    private int id_user;
     private String username;
     private String password;
 
@@ -13,13 +13,14 @@ public class Users {
      * Rôle de l'utilisateur (par exemple, ADMIN ou USER).
      */
     private String role;
+    private boolean activated;
 
-    public int getId() {
-        return id;
+    public int getId_user() {
+        return id_user;
     }
 
-    public void setId(int id) {
-        this.id = id;
+    public void setId_user(int id_user) {
+        this.id_user = id_user;
     }
 
     public String getUsername() {
@@ -46,18 +47,28 @@ public class Users {
         this.role = role;
     }
 
+    public boolean getActivated() {
+        return this.activated;
+    }
+
+    public void setActivated(boolean activated) {
+        this.activated = activated;
+    }
+
     /**
      * Constructeur de la classe Users.
      *
-     * @param id        l'identifiant unique
+     * @param id_user   l'identifiant unique
      * @param username  le nom d'utilisateur
      * @param password  le mot de passe
      * @param role      le rôle de l'utilisateur
+     * @param activated le statut d'activation de l'utilisateur
      */
-    public Users(int id, String username, String password, String role) {
-        this.id = id;
+    public Users(int id_user, String username, String password, String role, boolean activated) {
+        this.id_user = id_user;
         this.username = username;
         this.password = password;
         this.role = role;
+        this.activated = activated;
     }
 }
