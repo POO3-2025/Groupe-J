@@ -1,11 +1,13 @@
 package be.helha.poo3.serverpoo.services;
 
 
+import be.helha.poo3.serverpoo.models.Rarity;
 import be.helha.poo3.serverpoo.utils.ConnexionMongoDB;
 import be.helha.poo3.serverpoo.utils.DynamicClassGenerator;
 import com.mongodb.client.MongoCollection;
 import jakarta.annotation.PostConstruct;
 import org.bson.Document;
+import org.bson.types.ObjectId;
 import org.springframework.stereotype.Service;
 
 import java.lang.reflect.InvocationTargetException;
@@ -30,7 +32,19 @@ public class ItemLoaderService {
                 Class<?> clazz = DynamicClassGenerator.getClasses().get(type);
                 Object instance = clazz.getDeclaredConstructor().newInstance();
                 for (String key : doc.keySet()) {
-                    if (key.equals("_id") || key.equals("Name") || key.equals("Type")) continue;
+                    if (key.equals("_id")) {
+                        Method setId = clazz.getMethod("setId", ObjectId.class);
+                        setId.invoke(instance, doc.getObjectId("_id"));
+                        continue;
+                    }
+
+                    if (key.equals("Rarity")){
+                        Method setRarity = clazz.getMethod("setRarity", Rarity.class);
+                        Rarity enumValue = Rarity.valueOf(doc.getString("Rarity"));
+                        setRarity.invoke(instance, enumValue);
+                        continue;
+                    }
+
                     Object value = doc.get(key);
                     String methodName = "set" + Character.toUpperCase(key.charAt(0)) + key.substring(1);
 
@@ -42,7 +56,8 @@ public class ItemLoaderService {
                             setter = findCompatibleSetter(clazz, methodName, value);
                         }
                         setter.invoke(instance, value);
-                    } catch (Exception e) {
+                    }
+                    catch (Exception e) {
                         System.out.println("Impossible de créer le champs : "+ key + "->" + e.getMessage());
                     }
                 }

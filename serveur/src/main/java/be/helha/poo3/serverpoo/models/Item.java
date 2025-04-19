@@ -16,13 +16,15 @@ public class Item {
         this.type = "Sword";
         this.id = new ObjectId();
         this.rarity = Rarity.uncommon;
+        this.description = "Wood Sword";
     }
 
-    public Item(ObjectId id, String name, String type, Rarity rarity) {
+    public Item(ObjectId id, String name, String type, Rarity rarity, String description) {
         this.id = id;
         this.name = name;
         this.type = type;
         this.rarity = rarity;
+        this.description = description;
     }
     public static class ObjectIdWrapper {
         @JsonProperty("$oid")
@@ -68,13 +70,22 @@ public class Item {
         this.rarity = rarity;
     }
 
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
     @Override
     public String toString() {
         return "Item{" +
                 "id=" + id +
                 ", name='" + name + '\'' +
                 ", type='" + type + '\'' +
-                ", rarity=" + rarity +
+                ", rarity=" + rarity + '\'' +
+                ", description='" + description +
                 '}';
     }
 }

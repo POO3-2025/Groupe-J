@@ -42,7 +42,6 @@ public class DynamicClassGenerator {
                 }
             }
 
-            classes.forEach((k, v) -> {System.out.println("Class " + k + " : " + v.getName());});
         } catch (JsonMappingException e) {
             throw new RuntimeException(e);
         } catch (JsonProcessingException e) {
@@ -53,7 +52,6 @@ public class DynamicClassGenerator {
     }
 
     private static Boolean generateClass(String className, Document doc) throws Exception {
-        //String className = doc.getString("Type");
         if(classes.containsKey(className)) return false;
 
         ClassPool pool = ClassPool.getDefault();
@@ -70,11 +68,15 @@ public class DynamicClassGenerator {
         for(Map.Entry<String, Object> entry : doc.entrySet()) {
             String key = entry.getKey();
             if (key.equals("_id") || key.equals("Name") || key.equals("Type") || key.equals("Rarity") || key.equals("Description")) continue;
+
+            String fieldName = Character.toLowerCase(key.charAt(0)) + key.substring(1);
             Object value = entry.getValue();
+
             CtClass fieldType = inferCtClass(value);
-            CtField field = new CtField(fieldType, key, itemClass);
+            CtField field = new CtField(fieldType, fieldName, itemClass);
             field.setModifiers(Modifier.PROTECTED);
             itemClass.addField(field);
+
             String methodSuffix = Character.toUpperCase(key.charAt(0)) + key.substring(1);
             itemClass.addMethod(CtNewMethod.getter("get" + methodSuffix, field));
             itemClass.addMethod(CtNewMethod.setter("set" + methodSuffix, field));
@@ -82,23 +84,27 @@ public class DynamicClassGenerator {
         }
 
         StringBuilder toString = new StringBuilder();
-        toString.append("public String toString() {return \"")
-                .append(className).append("{\" + ");
-        boolean first = true;
+        toString.append("public String toString() { return \"")
+                .append(className).append("{\" + ")
+                .append("\"id=\" + this.id + ")
+                .append("\", name='\" + this.name + '\\'' + ")
+                .append("\", type='\" + this.type + '\\'' + ")
+                .append("\", rarity=\" + this.rarity + ")
+                .append("\", description='\" + this.description + '\\''");
 
-        toString.append("\"id=\" + this.id + \", name='\" + this.name + \"', type='\" + this.type + \"', rarity=\" + this.rarity");
         for (Map.Entry<String, Object> entry : doc.entrySet()) {
             String key = entry.getKey();
-            if (key.equals("_id") || key.equals("Name") || key.equals("Type")) continue;
+            if (key.equals("_id") || key.equals("Name") || key.equals("Type") || key.equals("Rarity") || key.equals("Description")) continue;
 
-            toString.append(" + \", ").append(key).append("=\" + this.").append(key);
+            String fieldName = key.substring(0, 1).toLowerCase() + key.substring(1);
+            toString.append(" + \", ").append(fieldName).append("=\" + this.").append(fieldName);
         }
-        toString.append(" + \"}\"; }");
 
+        toString.append(" + \"}\"; }");
         CtMethod toStringMethod = CtNewMethod.make(toString.toString(), itemClass);
         itemClass.addMethod(toStringMethod);
-        DynamicClassLoader cl = new DynamicClassLoader();
 
+        DynamicClassLoader cl = new DynamicClassLoader();
         Class<?> clazz = cl.defineClass(itemClass.getName(), itemClass.toBytecode());
         classes.put(className, clazz);
         return true;
