@@ -2,15 +2,14 @@ package be.helha.poo3.serverpoo.services;
 
 
 import be.helha.poo3.serverpoo.models.Rarity;
-import be.helha.poo3.serverpoo.utils.ConnexionMongoDB;
-import be.helha.poo3.serverpoo.utils.DynamicClassGenerator;
+import be.helha.poo3.serverpoo.component.ConnexionMongoDB;
+import be.helha.poo3.serverpoo.component.DynamicClassGenerator;
 import com.mongodb.client.MongoCollection;
 import jakarta.annotation.PostConstruct;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.springframework.stereotype.Service;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
@@ -18,14 +17,21 @@ import java.util.List;
 @Service
 public class ItemLoaderService {
 
+    private final ConnexionMongoDB connexionMongoDB;
+    private final DynamicClassGenerator classGenerator;
+
     private final List<Object> loadedItems = new ArrayList<>();
+
+    public ItemLoaderService(ConnexionMongoDB connexionMongoDB, DynamicClassGenerator classGenerator) {
+        this.connexionMongoDB = connexionMongoDB;
+        this.classGenerator = classGenerator;
+    }
 
     @PostConstruct
     public void init() {
         try{
-            ConnexionMongoDB db = ConnexionMongoDB.getInstance();
-            DynamicClassGenerator.getInstance().generate(db);
-            MongoCollection<Document> collection = db.getCollection();
+            classGenerator.generate();
+            MongoCollection<Document> collection = connexionMongoDB.getCollection();
 
             for (Document doc : collection.find()) {
                 String type = doc.getString("Type");

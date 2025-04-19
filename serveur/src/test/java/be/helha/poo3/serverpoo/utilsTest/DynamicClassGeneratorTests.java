@@ -1,85 +1,101 @@
 package be.helha.poo3.serverpoo.utilsTest;
 
-import be.helha.poo3.serverpoo.utils.ConnexionMongoDB;
-import be.helha.poo3.serverpoo.utils.DynamicClassGenerator;
+import be.helha.poo3.serverpoo.component.DynamicClassGenerator;
+import be.helha.poo3.serverpoo.models.Rarity;
+import be.helha.poo3.serverpoo.component.ConnexionMongoDB;
+import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoCursor;
 import org.bson.Document;
-import org.junit.jupiter.api.BeforeAll;
+import org.bson.types.ObjectId;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.test.context.ActiveProfiles;
 
 import java.lang.reflect.Method;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
+@SpringBootTest
+@ActiveProfiles("test")
 public class DynamicClassGeneratorTests {
-    static ConnexionMongoDB db;
 
-    @BeforeAll
-    static void init() {
-        db = ConnexionMongoDB.getInstance();
-        DynamicClassGenerator.getInstance().generate(db);
+    @Autowired
+    private DynamicClassGenerator generator;
+
+    @Autowired
+    private ConnexionMongoDB mockDb;
+
+    private static Document doc;
+
+    @BeforeEach
+    public void setup() {
+        generator.generate();
     }
 
     @Test
     public void testDynamicClassGenerationAndInstance() throws Exception {
-        MongoCollection<Document> collection = db.getCollection();
-        Document doc = collection.find().first();
-
-        assertNotNull(doc, "Le document ne doit pas être null");
-
         String type = doc.getString("Type");
-        assertNotNull(type, "Le champ 'Type' doit être présent");
+        assertNotNull(type);
 
-        Map<String, Class<?>> generatedClasses = DynamicClassGenerator.getClasses();
-        Class<?> clazz = generatedClasses.get(type);
+        Map<String, Class<?>> generated = DynamicClassGenerator.getClasses();
+        assertTrue(generated.containsKey(type), "La classe doit être générée pour le type " + type);
 
-        assertNotNull(clazz, "La classe dynamique pour le type '" + type + "' doit être générée");
-
+        Class<?> clazz = generated.get(type);
         Object instance = clazz.getDeclaredConstructor().newInstance();
-        assertNotNull(instance, "L'instance de la classe '" + type + "' ne doit pas être null");
+        assertNotNull(instance);
 
-        // Injecter les propriétés avec les setters
         for (String key : doc.keySet()) {
             if (key.equals("_id") || key.equals("Name") || key.equals("Type")) continue;
 
             Object value = doc.get(key);
-            String methodName = "set" + Character.toUpperCase(key.charAt(0)) + key.substring(1);
+            String methodSuffix = Character.toUpperCase(key.charAt(0)) + key.substring(1);
+            String setterName = "set" + methodSuffix;
+            String getterName = "get" + methodSuffix;
 
             try {
                 Method setter;
-                try {
-                    setter = clazz.getMethod(methodName, value.getClass());
-                } catch (NoSuchMethodException e) {
-                    // fallback pour primitives (int, double, etc.)
-                    setter = findCompatibleSetter(clazz, methodName, value);
+                if (key.equals("Rarity")) {
+                    setter = clazz.getMethod(setterName, Rarity.class);
+                    setter.invoke(instance, Rarity.valueOf(value.toString()));
+                } else {
+                    try {
+                        setter = clazz.getMethod(setterName, value.getClass());
+                    } catch (NoSuchMethodException e) {
+                        setter = findCompatibleSetter(clazz, setterName, value);
+                    }
+                    setter.invoke(instance, value);
                 }
 
-                setter.invoke(instance, value);
-
-                // Tester le getter
-                Method getter = clazz.getMethod("get" + Character.toUpperCase(key.charAt(0)) + key.substring(1));
+                Method getter = clazz.getMethod(getterName);
                 Object returnedValue = getter.invoke(instance);
 
-                assertEquals(value, returnedValue, "Le champ '" + key + "' doit être correctement set et get");
+                if (key.equals("Rarity")) {
+                    assertEquals(value.toString(), returnedValue.toString(), "Le champ 'Rarity' doit être correctement set et get");
+                } else {
+                    assertEquals(value, returnedValue, "Le champ '" + key + "' doit être correctement set et get");
+                }
 
             } catch (NoSuchMethodException e) {
-                fail("Méthode non trouvée pour le champ '" + key + "': " + e.getMessage());
+                fail("Méthode manquante pour le champ '" + key + "': " + e.getMessage());
             }
         }
 
-        // Vérifie que toString contient le nom de classe et les valeurs
-        String toString = instance.toString();
-        assertTrue(toString.contains(type), "La méthode toString() doit contenir le nom de type");
-
-        System.out.println("Objet généré dynamiquement : " + toString);
+        String result = instance.toString();
+        assertTrue(result.contains(type), "Le toString() doit contenir le nom de la classe");
+        System.out.println("Objet mocké généré : " + result);
     }
 
     private Method findCompatibleSetter(Class<?> clazz, String methodName, Object value) throws Exception {
         for (Method method : clazz.getMethods()) {
             if (!method.getName().equals(methodName)) continue;
             Class<?> paramType = method.getParameterTypes()[0];
-
             if (paramType.isPrimitive()) {
                 if ((paramType == int.class && value instanceof Integer)
                         || (paramType == double.class && value instanceof Double)
@@ -91,5 +107,35 @@ public class DynamicClassGeneratorTests {
         throw new NoSuchMethodException(clazz.getName() + "." + methodName + "(" + value.getClass() + ")");
     }
 
+    @TestConfiguration
+    static class MockMongoConfig {
+
+        @Bean
+        public ConnexionMongoDB mockDb() {
+            MongoCollection<Document> mockCollection = mock(MongoCollection.class);
+            FindIterable<Document> mockIterable = mock(FindIterable.class);
+            MongoCursor<Document> mockCursor = mock(MongoCursor.class);
+
+            Document doc = new Document()
+                    .append("_id", new ObjectId())
+                    .append("Name", "Test Sword")
+                    .append("Type", "Sword")
+                    .append("Rarity", "rare")
+                    .append("Description", "A good sword")
+                    .append("Damage", 51);
+
+            DynamicClassGeneratorTests.doc = doc;
+
+            when(mockCursor.hasNext()).thenReturn(true, false);
+            when(mockCursor.next()).thenReturn(doc);
+            when(mockIterable.iterator()).thenReturn(mockCursor);
+            when(mockCollection.find()).thenReturn(mockIterable);
+
+            ConnexionMongoDB db = mock(ConnexionMongoDB.class);
+            when(db.getCollection()).thenReturn(mockCollection);
+
+            return db;
+        }
+    }
 }
 

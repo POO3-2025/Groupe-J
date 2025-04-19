@@ -1,30 +1,32 @@
-package be.helha.poo3.serverpoo.utils;
+package be.helha.poo3.serverpoo.component;
 
+import be.helha.poo3.serverpoo.utils.DynamicClassLoader;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
 import org.bson.Document;
 import javassist.*;
+import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
 import java.util.Map;
 
+@Component
 public class DynamicClassGenerator {
     private static DynamicClassGenerator instance;
     private static final Map<String, Class<?>> classes = new HashMap<>();
     private static final String BASE_PACKAGE = "be.helha.poo3.serverpoo.models";
-    private DynamicClassGenerator() {}
+    private final ConnexionMongoDB connexionMongoDB;
 
-    public static DynamicClassGenerator getInstance() {
-        if (instance == null) {
-            instance = new DynamicClassGenerator();
-        }
-        return instance;
+    public DynamicClassGenerator(ConnexionMongoDB connexionMongoDB) {
+        this.connexionMongoDB = connexionMongoDB;
     }
 
-    public void generate(ConnexionMongoDB db) {
-        try (MongoCursor<Document> cursor = db.getCollection().find().iterator()) {
+    public void generate() {
+        MongoCollection<Document> collection = connexionMongoDB.getCollection();
+        try (MongoCursor<Document> cursor = collection.find().iterator()) {
             ObjectMapper mapper = new ObjectMapper();
             Map<String,Document> documents = new HashMap<>();
             while (cursor.hasNext()) {
