@@ -17,7 +17,7 @@ public class DynamicClassGeneratorTests {
 
     @BeforeAll
     static void init() {
-        db = new ConnexionMongoDB();
+        db = ConnexionMongoDB.getInstance();
         DynamicClassGenerator.getInstance().generate(db);
     }
 

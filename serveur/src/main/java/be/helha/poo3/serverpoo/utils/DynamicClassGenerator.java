@@ -2,16 +2,13 @@ package be.helha.poo3.serverpoo.utils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mongodb.client.MongoCursor;
 import org.bson.Document;
 import javassist.*;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 public class DynamicClassGenerator {
     private static DynamicClassGenerator instance;
@@ -84,6 +81,22 @@ public class DynamicClassGenerator {
 
         }
 
+        StringBuilder toString = new StringBuilder();
+        toString.append("public String toString() {return \"")
+                .append(className).append("{\" + ");
+        boolean first = true;
+
+        toString.append("\"id=\" + this.id + \", name='\" + this.name + \"', type='\" + this.type + \"', rarity=\" + this.rarity");
+        for (Map.Entry<String, Object> entry : doc.entrySet()) {
+            String key = entry.getKey();
+            if (key.equals("_id") || key.equals("Name") || key.equals("Type")) continue;
+
+            toString.append(" + \", ").append(key).append("=\" + this.").append(key);
+        }
+        toString.append(" + \"}\"; }");
+
+        CtMethod toStringMethod = CtNewMethod.make(toString.toString(), itemClass);
+        itemClass.addMethod(toStringMethod);
         DynamicClassLoader cl = new DynamicClassLoader();
 
         Class<?> clazz = cl.defineClass(itemClass.getName(), itemClass.toBytecode());
