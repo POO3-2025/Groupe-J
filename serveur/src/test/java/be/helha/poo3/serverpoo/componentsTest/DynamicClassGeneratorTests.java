@@ -1,8 +1,8 @@
-package be.helha.poo3.serverpoo.utilsTest;
+package be.helha.poo3.serverpoo.utilcomponentsTest;
 
-import be.helha.poo3.serverpoo.component.DynamicClassGenerator;
+import be.helha.poo3.serverpoo.components.DynamicClassGenerator;
 import be.helha.poo3.serverpoo.models.Rarity;
-import be.helha.poo3.serverpoo.component.ConnexionMongoDB;
+import be.helha.poo3.serverpoo.components.ConnexionMongoDB;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
