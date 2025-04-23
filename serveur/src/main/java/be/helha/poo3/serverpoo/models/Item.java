@@ -8,21 +8,24 @@ public class Item {
     protected ObjectId id;
     protected String name;
     protected String type;
+    protected String subType;
     protected Rarity rarity;
     protected String description;
 
     public Item() {
         this.name = "Basic Wood Sword";
         this.type = "Sword";
+        this.subType = "Equipement"; // ou null
         this.id = new ObjectId();
         this.rarity = Rarity.uncommon;
         this.description = "Wood Sword";
     }
 
-    public Item(ObjectId id, String name, String type, Rarity rarity, String description) {
+    public Item(ObjectId id, String name, String type, Rarity rarity, String description, String subType) {
         this.id = id;
         this.name = name;
         this.type = type;
+        this.subType = subType;
         this.rarity = rarity;
         this.description = description;
     }
@@ -62,6 +65,14 @@ public class Item {
         this.type = type;
     }
 
+    public String getSubType() {
+        return subType;
+    }
+
+    public void setSubType(String subType) {
+        this.subType = subType;
+    }
+
     public Rarity getRarity() {
         return rarity;
     }
@@ -84,6 +95,7 @@ public class Item {
                 "id=" + id +
                 ", name='" + name + '\'' +
                 ", type='" + type + '\'' +
+                ", subType='" + subType + '\'' +
                 ", rarity=" + rarity + '\'' +
                 ", description='" + description +
                 '}';

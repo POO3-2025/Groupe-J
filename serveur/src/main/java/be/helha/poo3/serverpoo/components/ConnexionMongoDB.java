@@ -1,4 +1,4 @@
-package be.helha.poo3.serverpoo.component;
+package be.helha.poo3.serverpoo.components;
 
 import be.helha.poo3.serverpoo.configuration.MongoConfig;
 import com.mongodb.client.*;

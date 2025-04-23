@@ -1,4 +1,4 @@
-package be.helha.poo3.serverpoo.component;
+package be.helha.poo3.serverpoo.components;
 
 import be.helha.poo3.serverpoo.utils.DynamicClassLoader;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -15,7 +15,7 @@ import java.util.Map;
 
 @Component
 public class DynamicClassGenerator {
-    private static DynamicClassGenerator instance;
+    //private static DynamicClassGenerator instance;
     private static final Map<String, Class<?>> classes = new HashMap<>();
     private static final String BASE_PACKAGE = "be.helha.poo3.serverpoo.models";
     private final ConnexionMongoDB connexionMongoDB;
@@ -67,9 +67,12 @@ public class DynamicClassGenerator {
         constructor.setBody("{ super(); }");
         itemClass.addConstructor(constructor);
 
-        for(Map.Entry<String, Object> entry : doc.entrySet()) {
+        for (Map.Entry<String, Object> entry : doc.entrySet()) {
             String key = entry.getKey();
-            if (key.equals("_id") || key.equals("Name") || key.equals("Type") || key.equals("Rarity") || key.equals("Description")) continue;
+
+            if (key.equals("_id") || key.equals("Name") || key.equals("Type")
+                    || key.equals("Rarity") || key.equals("Description") || key.equals("SubType"))
+                continue;
 
             String fieldName = Character.toLowerCase(key.charAt(0)) + key.substring(1);
             Object value = entry.getValue();
@@ -82,7 +85,6 @@ public class DynamicClassGenerator {
             String methodSuffix = Character.toUpperCase(key.charAt(0)) + key.substring(1);
             itemClass.addMethod(CtNewMethod.getter("get" + methodSuffix, field));
             itemClass.addMethod(CtNewMethod.setter("set" + methodSuffix, field));
-
         }
 
         StringBuilder toString = new StringBuilder();
@@ -91,12 +93,14 @@ public class DynamicClassGenerator {
                 .append("\"id=\" + this.id + ")
                 .append("\", name='\" + this.name + '\\'' + ")
                 .append("\", type='\" + this.type + '\\'' + ")
+                .append("\", subType='\" + this.subType + '\\'' + ")
                 .append("\", rarity=\" + this.rarity + ")
                 .append("\", description='\" + this.description + '\\''");
 
         for (Map.Entry<String, Object> entry : doc.entrySet()) {
             String key = entry.getKey();
-            if (key.equals("_id") || key.equals("Name") || key.equals("Type") || key.equals("Rarity") || key.equals("Description")) continue;
+            if (key.equals("_id") || key.equals("Name") || key.equals("Type")
+                    || key.equals("Rarity") || key.equals("Description") || key.equals("SubType")) continue;
 
             String fieldName = key.substring(0, 1).toLowerCase() + key.substring(1);
             toString.append(" + \", ").append(fieldName).append("=\" + this.").append(fieldName);

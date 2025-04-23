@@ -1,9 +1,10 @@
 package be.helha.poo3.serverpoo.services;
 
 
+import be.helha.poo3.serverpoo.models.Item;
 import be.helha.poo3.serverpoo.models.Rarity;
-import be.helha.poo3.serverpoo.component.ConnexionMongoDB;
-import be.helha.poo3.serverpoo.component.DynamicClassGenerator;
+import be.helha.poo3.serverpoo.components.ConnexionMongoDB;
+import be.helha.poo3.serverpoo.components.DynamicClassGenerator;
 import com.mongodb.client.MongoCollection;
 import jakarta.annotation.PostConstruct;
 import org.bson.Document;
@@ -20,7 +21,7 @@ public class ItemLoaderService {
     private final ConnexionMongoDB connexionMongoDB;
     private final DynamicClassGenerator classGenerator;
 
-    private final List<Object> loadedItems = new ArrayList<>();
+    private final List<Item> loadedItems = new ArrayList<>();
 
     public ItemLoaderService(ConnexionMongoDB connexionMongoDB, DynamicClassGenerator classGenerator) {
         this.connexionMongoDB = connexionMongoDB;
@@ -36,7 +37,7 @@ public class ItemLoaderService {
             for (Document doc : collection.find()) {
                 String type = doc.getString("Type");
                 Class<?> clazz = DynamicClassGenerator.getClasses().get(type);
-                Object instance = clazz.getDeclaredConstructor().newInstance();
+                Item instance = (Item) clazz.getDeclaredConstructor().newInstance();
                 for (String key : doc.keySet()) {
                     if (key.equals("_id")) {
                         Method setId = clazz.getMethod("setId", ObjectId.class);
@@ -75,9 +76,40 @@ public class ItemLoaderService {
         }
     }
 
-    public List<Object> getLoadedItems() {
+    public List<Item> getLoadedItems() {
         return loadedItems;
     }
+
+    public List<Item> findByName(String name) {
+        return loadedItems.stream()
+                .filter(item -> item.getName().equalsIgnoreCase(name))
+                .toList();
+    }
+
+    public List<Item> findByType(String type) {
+        return loadedItems.stream()
+                .filter(item -> item.getType().equalsIgnoreCase(type))
+                .toList();
+    }
+
+    public List<Item> findByRarity(Rarity rarity) {
+        return loadedItems.stream()
+                .filter(item -> item.getRarity() == rarity)
+                .toList();
+    }
+
+    public List<Item> findByRarityAndType(Rarity rarity, String type) {
+        return loadedItems.stream()
+                .filter(item -> item.getRarity() == rarity && item.getType().equalsIgnoreCase(type))
+                .toList();
+    }
+
+    public List<Item> findByRarityAndSubType(Rarity rarity, String subType) {
+        return loadedItems.stream()
+                .filter(item -> item.getRarity() == rarity && item.getSubType().equalsIgnoreCase(subType))
+                .toList();
+    }
+
 
     private Method findCompatibleSetter(Class<?> clazz, String methodName, Object value) throws Exception {
         for (Method method : clazz.getMethods()) {

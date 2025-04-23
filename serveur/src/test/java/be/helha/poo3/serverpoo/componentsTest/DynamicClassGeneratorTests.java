@@ -1,4 +1,4 @@
-package be.helha.poo3.serverpoo.utilcomponentsTest;
+package be.helha.poo3.serverpoo.componentsTest;
 
 import be.helha.poo3.serverpoo.components.DynamicClassGenerator;
 import be.helha.poo3.serverpoo.models.Rarity;
