@@ -1,28 +1,26 @@
 package be.helha.poo3.serverpoo.componentsTest;
 
 import be.helha.poo3.serverpoo.components.DynamicClassGenerator;
+import be.helha.poo3.serverpoo.config.TestMongoConfig;
 import be.helha.poo3.serverpoo.models.Rarity;
-import be.helha.poo3.serverpoo.components.ConnexionMongoDB;
-import com.mongodb.client.FindIterable;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoCursor;
+import org.springframework.data.mongodb.core.MongoTemplate;
 import org.bson.Document;
-import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.context.annotation.Bean;
 import org.springframework.test.context.ActiveProfiles;
 
+import java.io.InputStream;
 import java.lang.reflect.Method;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
-@SpringBootTest
+
+@SpringBootTest(classes = TestMongoConfig.class)
 @ActiveProfiles("test")
 public class DynamicClassGeneratorTests {
 
@@ -30,22 +28,44 @@ public class DynamicClassGeneratorTests {
     private DynamicClassGenerator generator;
 
     @Autowired
-    private ConnexionMongoDB mockDb;
+    private MongoTemplate mongoTemplate;
 
     private static Document doc;
 
     @BeforeEach
-    public void setup() {
+    public void setup() throws Exception {
+        mongoTemplate.dropCollection("Items");
+
+        InputStream is = getClass().getClassLoader().getResourceAsStream("TestDB.MaCollection.json");
+        assertNotNull(is, "Le fichier JSON de test n'a pas été trouvé");
+
+        // Lire le fichier entier
+        String jsonArray = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+
+        // Encapsuler pour que Mongo le parse comme une liste de documents
+        Document wrapper = Document.parse("{\"array\": " + jsonArray + "}");
+        List<Document> documents = wrapper.getList("array", Document.class);
+
+        mongoTemplate.insert(documents, "Items");
+
+        doc = documents.get(0);
         generator.generate();
     }
 
     @Test
     public void testDynamicClassGenerationAndInstance() throws Exception {
         String type = doc.getString("Type");
+        System.out.println("🔍 Document utilisé : " + doc.toJson());
+        System.out.println("📦 Type extrait du document : " + type);
         assertNotNull(type);
 
         Map<String, Class<?>> generated = DynamicClassGenerator.getClasses();
-        assertTrue(generated.containsKey(type), "La classe doit être générée pour le type " + type);
+
+
+        System.out.println("📚 Types générés : " + generated.keySet());
+        assertTrue(generated.containsKey(type),
+                "❌ Aucune classe générée pour le type '" + type + "'. " +
+                        "Types disponibles : " + generated.keySet());
 
         Class<?> clazz = generated.get(type);
         Object instance = clazz.getDeclaredConstructor().newInstance();
@@ -105,37 +125,6 @@ public class DynamicClassGeneratorTests {
             }
         }
         throw new NoSuchMethodException(clazz.getName() + "." + methodName + "(" + value.getClass() + ")");
-    }
-
-    @TestConfiguration
-    static class MockMongoConfig {
-
-        @Bean
-        public ConnexionMongoDB mockDb() {
-            MongoCollection<Document> mockCollection = mock(MongoCollection.class);
-            FindIterable<Document> mockIterable = mock(FindIterable.class);
-            MongoCursor<Document> mockCursor = mock(MongoCursor.class);
-
-            Document doc = new Document()
-                    .append("_id", new ObjectId())
-                    .append("Name", "Test Sword")
-                    .append("Type", "Sword")
-                    .append("Rarity", "rare")
-                    .append("Description", "A good sword")
-                    .append("Damage", 51);
-
-            DynamicClassGeneratorTests.doc = doc;
-
-            when(mockCursor.hasNext()).thenReturn(true, false);
-            when(mockCursor.next()).thenReturn(doc);
-            when(mockIterable.iterator()).thenReturn(mockCursor);
-            when(mockCollection.find()).thenReturn(mockIterable);
-
-            ConnexionMongoDB db = mock(ConnexionMongoDB.class);
-            when(db.getCollection()).thenReturn(mockCollection);
-
-            return db;
-        }
     }
 }
 
