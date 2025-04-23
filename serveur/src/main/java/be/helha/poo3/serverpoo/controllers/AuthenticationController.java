@@ -1,7 +1,10 @@
 package be.helha.poo3.serverpoo.controllers;
 
+import be.helha.poo3.serverpoo.models.Users;
+import be.helha.poo3.serverpoo.services.UserService;
 import be.helha.poo3.serverpoo.utils.AuthenticationResponse;
 import be.helha.poo3.serverpoo.utils.JwtUtils;
+import be.helha.poo3.serverpoo.utils.RefreshRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -10,22 +13,21 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/auth")
 public class AuthenticationController {
 
-    @Autowired
-    private JwtUtils jwtUtils;
-
     private final AuthenticationManager authenticationManager;
+    private final JwtUtils jwtUtils;
+    private final UserService userService;
 
-    public AuthenticationController(AuthenticationManager authenticationManager) {
+    @Autowired
+    public AuthenticationController(AuthenticationManager authenticationManager, JwtUtils jwtUtils, UserService userService) {
         this.authenticationManager = authenticationManager;
+        this.jwtUtils = jwtUtils;
+        this.userService = userService;
     }
 
     @PostMapping("/login")
@@ -38,16 +40,19 @@ public class AuthenticationController {
                     )
             );
 
-            // Stocker l'authentification dans le SecurityContext
             SecurityContextHolder.getContext().setAuthentication(authentication);
+            Users user = userService.getUserByUsername(loginRequest.getUsername());
 
-            // Génération du token JWT
-            String jwtToken = jwtUtils.generateToken(authentication);
-            return ResponseEntity.ok(new AuthenticationResponse(jwtToken, "Authentification réussie !"));
+            String accessToken = jwtUtils.generateToken(authentication, user.getId_user());
+            String refreshToken = jwtUtils.generateRefreshToken(user.getUsername());
+
+            return ResponseEntity.ok(new AuthenticationResponse(accessToken, refreshToken, "Authentification réussie !"));
+
         } catch (AuthenticationException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Échec de l'authentification : " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Échec de l'authentification");
         }
     }
+
 
     static class LoginRequest {
         private String username;
@@ -62,4 +67,18 @@ public class AuthenticationController {
         }
     }
 
+    @PostMapping("/refresh")
+    public ResponseEntity<?> refreshToken(@RequestBody RefreshRequest request) {
+        String refreshToken = request.getRefreshToken();
+
+        if (!jwtUtils.validateRefreshToken(refreshToken)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Refresh token invalide ou expiré");
+        }
+
+        String username = jwtUtils.getUsernameFromRefreshToken(refreshToken);
+        Users user = userService.getUserByUsername(username);
+
+        String newAccessToken = jwtUtils.generateTokenFromUser(user);
+        return ResponseEntity.ok(new AuthenticationResponse(newAccessToken, refreshToken, "Nouveau token généré"));
+    }
 }

@@ -2,7 +2,11 @@ package be.helha.poo3.serverpoo.controllers;
 
 import be.helha.poo3.serverpoo.models.Users;
 import be.helha.poo3.serverpoo.services.UserService;
+import be.helha.poo3.serverpoo.utils.JwtUtils;
+import io.jsonwebtoken.JwtException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,6 +22,9 @@ public class UserController {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private JwtUtils jwtUtils;
 
     /**
      * Récupère la liste de tous les utilisateurs.
@@ -67,15 +74,53 @@ public class UserController {
     }
 
     /**
-     * Met à jour un utilisateur existant dans la base à partir de l'ID fourni dans l'URL
-     * et des nouvelles informations passées dans le corps de la requête.
+     * Met à jour les informations d'un utilisateur spécifique, à condition que l'utilisateur
+     * authentifié via le token JWT soit bien celui correspondant à l'ID dans l'URL.
      *
-     * @param id_user l'identifiant unique de l'utilisateur à modifier
-     * @param user    un objet Users contenant les champs à mettre à jour
-     * @return l'utilisateur modifié avec ses nouvelles valeurs
+     * <p>Cette méthode vérifie d'abord la présence d'un en-tête Authorization contenant un token JWT
+     * valide. Ensuite, elle extrait l'ID utilisateur du token et le compare à l'ID fourni dans
+     * le chemin de la requête pour s'assurer que l'utilisateur ne peut modifier que ses propres données.</p>
+     *
+     * @param authHeader l'en-tête HTTP "Authorization" contenant le token JWT (de la forme "Bearer {token}")
+     * @param id_user l'identifiant de l'utilisateur à modifier (extrait de l'URL)
+     * @param userToUpdate les nouvelles données à appliquer à l'utilisateur
+     * @return une réponse HTTP contenant l'utilisateur mis à jour en cas de succès,
+     *         ou un message d'erreur approprié avec le code HTTP correspondant :
+     *         <ul>
+     *             <li><b>403 Forbidden</b> : si l'en-tête est manquant ou que l'utilisateur tente de modifier un autre compte</li>
+     *             <li><b>401 Unauthorized</b> : si le token est invalide</li>
+     *             <li><b>500 Internal Server Error</b> : en cas d'erreur lors de la mise à jour</li>
+     *         </ul>
      */
+
     @PutMapping(path="/{id_user}")
-    public Users updateUser(@PathVariable int id_user, @RequestBody Users user) {
-        return userService.updateUser(id_user, user);
+    public ResponseEntity<?> updateUser(
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @PathVariable int id_user,
+            @RequestBody Users userToUpdate
+    ) {
+        if (authHeader == null || authHeader.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Authorization header is missing");
+        }
+
+        String token = authHeader.startsWith("Bearer ") ? authHeader.substring(7) : authHeader;
+
+        try {
+            int tokenUserId = jwtUtils.getUserIdFromToken(token);
+
+            // Vérifie que l'utilisateur du token est bien celui qu'on essaie de modifier
+            if (tokenUserId != id_user) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Vous ne pouvez modifier que votre propre compte.");
+            }
+
+            Users updatedUser = userService.updateUser(id_user, userToUpdate);
+            return ResponseEntity.ok(updatedUser);
+
+        } catch (JwtException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token invalide : " + e.getMessage());
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erreur lors de la mise à jour : " + e.getMessage());
+        }
     }
+
 }

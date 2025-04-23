@@ -140,6 +140,42 @@ public class UserService implements UserDetailsService {
     }
 
     /**
+     * Recherche un utilisateur en base de données à partir de son nom d'utilisateur.
+     *
+     * @param username le nom d'utilisateur à chercher
+     * @return l'utilisateur correspondant
+     * @throws ResponseStatusException si aucun utilisateur n'est trouvé
+     * @throws RuntimeException en cas d'erreur lors de l'accès à la base de données
+     */
+    public Users getUserByUsername(String username) {
+        String sql = "SELECT * FROM user WHERE username = ?";
+
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, username);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return new Users(
+                            rs.getInt("id_user"),
+                            rs.getString("username"),
+                            rs.getString("password"),
+                            rs.getString("role"),
+                            rs.getBoolean("activated")
+                    );
+                } else {
+                    throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Utilisateur non trouvé avec le username : " + username);
+                }
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException("Erreur lors de la récupération de l'utilisateur par username", e);
+        }
+    }
+
+
+    /**
      * Ajoute un nouvel utilisateur dans la base de données et met à jour son identifiant auto-généré.
      * L'utilisateur est automatiquement activé et son mot de passe encodé avant l'insertion.
      *
