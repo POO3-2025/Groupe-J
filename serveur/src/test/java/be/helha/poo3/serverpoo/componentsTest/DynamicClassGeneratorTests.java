@@ -55,16 +55,14 @@ public class DynamicClassGeneratorTests {
     @Test
     public void testDynamicClassGenerationAndInstance() throws Exception {
         String type = doc.getString("Type");
-        System.out.println("🔍 Document utilisé : " + doc.toJson());
-        System.out.println("📦 Type extrait du document : " + type);
+        System.out.println("Document utilisé : " + doc.toJson());
+        System.out.println("Type extrait du document : " + type);
         assertNotNull(type);
 
         Map<String, Class<?>> generated = DynamicClassGenerator.getClasses();
 
-
-        System.out.println("📚 Types générés : " + generated.keySet());
         assertTrue(generated.containsKey(type),
-                "❌ Aucune classe générée pour le type '" + type + "'. " +
+                "Aucune classe générée pour le type '" + type + "'. " +
                         "Types disponibles : " + generated.keySet());
 
         Class<?> clazz = generated.get(type);
