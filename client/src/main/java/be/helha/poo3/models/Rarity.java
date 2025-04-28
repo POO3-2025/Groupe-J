@@ -1,5 +1,6 @@
-package be.helha.poo3.serverpoo.models;
+package be.helha.poo3.models;
 
 public enum Rarity {
     common,uncommon,rare,epic,legendary;
 }
+

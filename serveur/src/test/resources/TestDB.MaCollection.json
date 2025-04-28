@@ -1,0 +1,42 @@
+[{
+  "_id": {
+    "$oid": "67bf371dc5340129f6b02b2f"
+  },
+  "Name": "Basic Sword",
+  "Type": "Sword",
+  "Damage": 50,
+  "Rarity": "common",
+  "Description": "A simple sword"
+},
+  {
+    "_id": {
+      "$oid": "67bf37a352cbac5cfae8c15a"
+    },
+    "Name": "Basic Shield",
+    "Type": "Shield",
+    "Defense": 20,
+    "Description": "A simple Shield",
+    "Rarity": "common"
+  },
+  {
+    "_id": {
+      "$oid": "67bf3fffd1cf422617632cca"
+    },
+    "Name": "Upgraded Shield",
+    "Type": "Shield",
+    "Defense": 30,
+    "Description": "A more robust shield",
+    "Rarity": "uncommon"
+  },
+  {
+    "_id": {
+      "$oid": "6808b3630039800c4db5b41e"
+    },
+    "Name": "Small potion",
+    "Type": "Potion",
+    "Capacity": 10,
+    "CurrentCapacity": 10,
+    "Rarity": "common",
+    "Description": "A basic healing potion",
+    "SubType": "Consumable"
+  }]
