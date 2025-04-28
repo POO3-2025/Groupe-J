@@ -1,0 +1,39 @@
+[
+  {
+    "damage": 50,
+    "name": "Basic Sword",
+    "description": "A simple sword",
+    "subType": "Equipement",
+    "_id": "67bf371dc5340129f6b02b2f",
+    "type": "Sword",
+    "rarity": "common"
+  },
+  {
+    "defense": 20,
+    "name": "Basic Shield",
+    "description": "A simple Shield",
+    "subType": "Equipement",
+    "_id": "67bf37a352cbac5cfae8c15a",
+    "type": "Shield",
+    "rarity": "common"
+  },
+  {
+    "defense": 30,
+    "name": "Upgraded Shield",
+    "description": "A more robust shield",
+    "subType": "Equipement",
+    "_id": "67bf3fffd1cf422617632cca",
+    "type": "Shield",
+    "rarity": "uncommon"
+  },
+  {
+    "currentCapacity": 10,
+    "name": "Small potion",
+    "description": "A basic healing potion",
+    "subType": "Consumable",
+    "_id": "6808b3630039800c4db5b41e",
+    "type": "Potion",
+    "rarity": "common",
+    "capacity": 10
+  }
+]
