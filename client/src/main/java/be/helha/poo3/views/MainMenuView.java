@@ -10,15 +10,6 @@ import java.util.List;
 
 /**
  * Classe représentant le menu principal affiché après la connexion d'un utilisateur.
- *
- * <p>
- * Cette vue console Lanterna propose les options suivantes :
- * <ul>
- *     <li>Afficher un message de bienvenue avec le nom de l'utilisateur connecté</li>
- *     <li>Se déconnecter et revenir à l'écran de connexion</li>
- *     <li>Quitter l'application proprement</li>
- * </ul>
- * </p>
  */
 public class MainMenuView {
     private final WindowBasedTextGUI gui;

@@ -123,4 +123,8 @@ public class UserController {
         }
     }
 
+    @GetMapping("/exists/{username}")
+    public boolean userExists(@PathVariable String username) {
+        return userService.userExists(username);
+    }
 }

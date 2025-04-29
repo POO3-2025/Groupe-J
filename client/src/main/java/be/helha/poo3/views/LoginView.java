@@ -10,19 +10,6 @@ import java.util.List;
 
 /**
  * Cette classe représente l'interface de connexion utilisateur.
- *
- * <p>
- * Elle affiche une fenêtre centrée contenant :
- * <ul>
- *     <li>Un champ pour le nom d'utilisateur</li>
- *     <li>Un champ pour le mot de passe (masqué)</li>
- *     <li>Un bouton pour se connecter (avec appel à AuthService)</li>
- *     <li>Un bouton pour quitter l'application</li>
- * </ul>
- * </p>
- *
- * En cas de succès, l'utilisateur est redirigé vers le {@link MainMenuView}.
- * En cas d'échec, une boîte de dialogue d'erreur est affichée.
  */
 public class LoginView {
     private final WindowBasedTextGUI gui;
@@ -40,7 +27,7 @@ public class LoginView {
 
         // Panel principal en disposition verticale
         Panel panel = new Panel(new LinearLayout(Direction.VERTICAL));
-        panel.setPreferredSize(new TerminalSize(40, 14)); // Taille fixe pour homogénéité
+        panel.setPreferredSize(new TerminalSize(40, 16));
 
         // Champs de saisie
         TextBox usernameBox = new TextBox().setPreferredSize(new TerminalSize(30, 1));
@@ -53,24 +40,26 @@ public class LoginView {
         panel.addComponent(passwordBox);
         panel.addComponent(new EmptySpace());
 
-        // Panel contenant les boutons "Se connecter" et "Quitter"
-        Panel buttons = new Panel(new GridLayout(2));
+        // Panel contenant les trois boutons côte à côte : Se connecter | S'inscrire | Quitter
+        Panel buttons = new Panel(new GridLayout(3));
 
-        // Bouton "Se connecter" → tente d’authentifier l'utilisateur
         buttons.addComponent(new Button("Se connecter", () -> {
-            // Appel à AuthService pour authentification
             if (AuthService.authenticate(usernameBox.getText(), passwordBox.getText())) {
-                loginWindow.close(); // Ferme la fenêtre actuelle
-                new MainMenuView(gui, screen).show(); // Affiche le menu principal
+                loginWindow.close();
+                new MainMenuView(gui, screen).show();
             } else {
-                // Affiche une boîte de dialogue d'erreur si échec de l'authentification
                 MessageDialog.showMessageDialog(gui, "Erreur", "Nom d'utilisateur et/ou mot de passe invalide.");
             }
         }));
 
-        // Bouton "Quitter" -> ferme l'application proprement
+        buttons.addComponent(new Button("S'inscrire", () -> {
+            loginWindow.close();
+            new RegistrationView(gui, screen).show();
+        }));
+
         buttons.addComponent(new Button("Quitter", this::quit));
 
+        // Ajout du panel des boutons au panel principal
         panel.addComponent(buttons);
 
         // Place le panel dans la fenêtre

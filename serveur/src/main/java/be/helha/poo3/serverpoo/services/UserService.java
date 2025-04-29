@@ -184,17 +184,19 @@ public class UserService implements UserDetailsService {
      * @throws RuntimeException en cas d'erreur lors de l'insertion en base de données
      */
     public Users addUser(Users user) {
+        // Avant d'insérer, vérifier si le username existe déjà
+        if (userExists(user.getUsername())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Le nom d'utilisateur existe déjà.");
+        }
+
         String sql = "INSERT INTO user (username, password, role, activated) VALUES (?, ?, ?, ?)";
 
-        // On force pour que lors de la création d'un compte, le compte soit systématiquement activé sans à le préciser dans le JSON
         user.setActivated(true);
 
-        // Si aucun rôle n'est précisé, on met "USER" par défaut
         if (user.getRole() == null || user.getRole().trim().isEmpty()) {
             user.setRole("USER");
         }
 
-        // Encoder le mot de passe avant de le sauvegarder
         String encodedPassword = passwordEncoder.encode(user.getPassword());
         user.setPassword(encodedPassword);
 
@@ -207,7 +209,6 @@ public class UserService implements UserDetailsService {
             stmt.setBoolean(4, user.getActivated());
             stmt.executeUpdate();
 
-            // Permet de récupérer la clé générée (ID) pour le voir dans le response JSON
             try (ResultSet rs = stmt.getGeneratedKeys()) {
                 if (rs.next()) {
                     user.setId_user(rs.getInt(1));
@@ -257,10 +258,14 @@ public class UserService implements UserDetailsService {
 
         // Mise à jour des champs
         if (userToAdd.getUsername() != null) {
+            // Vérifier si le nouveau nom d'utilisateur est différent et déjà pris
+            if (!existingUser.getUsername().equals(userToAdd.getUsername()) && userExists(userToAdd.getUsername())) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Le nom d'utilisateur existe déjà.");
+            }
             existingUser.setUsername(userToAdd.getUsername());
         }
         if (userToAdd.getPassword() != null) {
-            String encodedPassword = passwordEncoder.encode(userToAdd.getPassword()); // Encoder le nouveau mot de passe avant de le sauvegarder
+            String encodedPassword = passwordEncoder.encode(userToAdd.getPassword()); // Encoder le nouveau mot de passe
             existingUser.setPassword(encodedPassword);
         }
         if (userToAdd.getRole() != null) {
@@ -273,21 +278,47 @@ public class UserService implements UserDetailsService {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-             stmt.setString(1, existingUser.getUsername());
-             stmt.setString(2, existingUser.getPassword());
-             stmt.setString(3, existingUser.getRole());
-             stmt.setBoolean(4, existingUser.getActivated());
-             stmt.setInt(5, id_user);
+            stmt.setString(1, existingUser.getUsername());
+            stmt.setString(2, existingUser.getPassword());
+            stmt.setString(3, existingUser.getRole());
+            stmt.setBoolean(4, existingUser.getActivated());
+            stmt.setInt(5, id_user);
 
-             int rowsUpdated = stmt.executeUpdate();
-             if (rowsUpdated == 0) {
+            int rowsUpdated = stmt.executeUpdate();
+            if (rowsUpdated == 0) {
                 throw new RuntimeException("Impossible de mettre à jour l'utilisateur d'ID " + id_user);
-             }
+            }
 
         } catch (SQLException e) {
             throw new RuntimeException("Erreur lors de la mise à jour de l'utilisateur : ", e);
         }
 
         return existingUser;
+    }
+
+    /**
+     * Vérifie si un utilisateur avec le nom d'utilisateur spécifié existe déjà dans la base de données.
+     *
+     * Cette méthode exécute une requête SQL comptant le nombre d'entrées correspondant au nom d'utilisateur donné.
+     * Elle est utilisée notamment avant une création de compte pour éviter les doublons.
+     *
+     * @param username Le nom d'utilisateur à vérifier.
+     * @return {@code true} si un utilisateur avec ce nom existe, {@code false} sinon.
+     * @throws RuntimeException si une erreur SQL survient pendant la requête.
+     */
+    public boolean userExists(String username) {
+        String sql = "SELECT COUNT(*) FROM user WHERE username = ?";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, username);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1) > 0;
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Erreur lors de la vérification du nom d'utilisateur", e);
+        }
+        return false;
     }
 }

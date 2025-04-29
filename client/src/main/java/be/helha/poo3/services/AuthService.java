@@ -10,23 +10,6 @@ import java.util.Map;
 
 /**
  * Service d'authentification responsable de la connexion et de la déconnexion de l'utilisateur.
- *
- * <p>
- * Cette classe fournit deux fonctionnalités principales :
- * <ul>
- *     <li>Authentifier un utilisateur en envoyant ses identifiants à une API REST et stocker le token reçu.</li>
- *     <li>Déconnecter l'utilisateur en réinitialisant sa session.</li>
- * </ul>
- * </p>
- *
- * <p>
- * Lors de l'authentification réussie, le nom d'utilisateur et le token JWT sont enregistrés dans {@link UserSession}.
- * En cas d'échec, l'utilisateur reste non authentifié.
- * </p>
- *
- * <p>
- * Utilise les bibliothèques OkHttp pour la communication HTTP et Gson pour le parsing JSON.
- * </p>
  */
 public class AuthService {
     private static final String API_URL = "http://localhost:8080/auth/login";
