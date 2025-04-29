@@ -12,8 +12,19 @@ repositories {
 dependencies {
     testImplementation platform('org.junit:junit-bom:5.10.0')
     testImplementation 'org.junit.jupiter:junit-jupiter'
+
+    implementation 'com.googlecode.lanterna:lanterna:3.1.1'
+    implementation 'com.squareup.okhttp3:okhttp:4.9.3' // pour les appels HTTP
+    implementation 'com.google.code.gson:gson:2.8.9'   // pour parser les JSON
+
 }
 
 test {
     useJUnitPlatform()
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
 }
