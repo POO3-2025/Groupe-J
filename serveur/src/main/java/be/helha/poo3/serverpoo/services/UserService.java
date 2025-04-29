@@ -225,18 +225,29 @@ public class UserService implements UserDetailsService {
      * Désactive l'utilisateur dont l'ID est spécifié en mettant son champ "activated" à false dans la base de données.
      *
      * @param id_user L'ID de l'utilisateur à désactiver.
-     * @throws RuntimeException si une erreur survient lors de l'exécution de la requête SQL.
+     * @param authenticatedUserId L'ID de l'utilisateur authentifié extrait du token JWT.
+     * @throws ResponseStatusException si l'utilisateur tente de supprimer un compte qui n'est pas le sien.
+     * @throws RuntimeException en cas d'erreur SQL ou si l'utilisateur n'a pas pu être désactivé.
      */
-    public void deleteUser(int id_user) {
+    public void deleteUser(int id_user, int authenticatedUserId) {
+        // Vérifie que l'utilisateur connecté correspond à celui qu'on veut supprimer
+        if (id_user != authenticatedUserId) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Vous n'êtes pas autorisé à supprimer cet utilisateur.");
+        }
+
         String sql = "UPDATE user SET activated = false WHERE id_user = ?";
 
-        try (Connection conn = dataSource.getConnection()) {
-            try (PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-                stmt.setInt(1, id_user);
-                stmt.executeUpdate();
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, id_user);
+            int rowsUpdated = stmt.executeUpdate();
+            if (rowsUpdated == 0) {
+                throw new RuntimeException("Impossible de désactiver l'utilisateur d'ID " + id_user);
             }
+
         } catch (SQLException e) {
-            throw new RuntimeException("Erreur lors de la suppression de l'utilisateur : ", e);
+            throw new RuntimeException("Erreur lors de la désactivation de l'utilisateur : ", e);
         }
     }
 

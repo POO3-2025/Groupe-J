@@ -75,9 +75,7 @@ public class UserControllerTest {
 
     @Test
     void testGetUserById_NotFound() {
-        doThrow(new ResponseStatusException(
-                org.springframework.http.HttpStatus.NOT_FOUND,
-                "L'utilisateur avec l'ID 99 n'existe pas."))
+        doThrow(new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"))
                 .when(userService).getUserById(99);
 
         assertThrows(ResponseStatusException.class,
@@ -101,8 +99,35 @@ public class UserControllerTest {
 
     @Test
     void testDeleteUser_Success() {
-        userController.deleteUser(1);
-        verify(userService, times(1)).deleteUser(1);
+        int userId = 1;
+        String tokenHeader = "Bearer faketoken";
+
+        when(jwtUtils.getUserIdFromToken("faketoken")).thenReturn(userId);
+
+        ResponseEntity<?> response = userController.deleteUser(userId, tokenHeader);
+
+        verify(userService).deleteUser(userId, userId);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+    }
+
+    @Test
+    void testDeleteUser_NoToken_Forbidden() {
+        ResponseEntity<?> response = userController.deleteUser(1, null);
+
+        assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+        assertTrue(response.getBody().toString().contains("connecté"));
+    }
+
+    @Test
+    void testDeleteUser_InvalidToken_Unauthorized() {
+        String badToken = "Bearer badtoken";
+
+        when(jwtUtils.getUserIdFromToken("badtoken")).thenThrow(new io.jsonwebtoken.JwtException("Invalid Token"));
+
+        ResponseEntity<?> response = userController.deleteUser(1, badToken);
+
+        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+        assertTrue(response.getBody().toString().contains("Token invalide"));
     }
 
     @Test
@@ -112,7 +137,6 @@ public class UserControllerTest {
         Users updatedUser = new Users(userId, "updatedUsername", "updatedPass", "ADMIN", true);
 
         when(jwtUtils.getUserIdFromToken("faketoken")).thenReturn(userId);
-        lenient().when(userService.getUserById(userId)).thenReturn(updatedUser); // ce mock est peut-être inutile ici, ne me jette pas une exception
         when(userService.updateUser(eq(userId), any(Users.class))).thenReturn(updatedUser);
 
         ResponseEntity<?> response = userController.updateUser(tokenHeader, userId, updatedUser);
@@ -125,15 +149,30 @@ public class UserControllerTest {
 
     @Test
     void testUpdateUser_TokenUserMismatch_Forbidden() {
+        int pathId = 2;
         String tokenHeader = "Bearer wrongtoken";
-        int pathId = 2; // != ID dans token
-        Users dummyUpdate = new Users(2, "other", "pass", "USER", true);
 
-        when(jwtUtils.getUserIdFromToken("wrongtoken")).thenReturn(1); // Token prétend être ID 1
+        when(jwtUtils.getUserIdFromToken("wrongtoken")).thenReturn(1);
+
+        Users dummyUpdate = new Users(2, "other", "pass", "USER", true);
 
         ResponseEntity<?> response = userController.updateUser(tokenHeader, pathId, dummyUpdate);
 
         assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
         assertTrue(response.getBody().toString().contains("propre compte"));
+    }
+
+    @Test
+    void testUserExists_True() {
+        when(userService.userExists("existingUser")).thenReturn(true);
+
+        assertTrue(userController.userExists("existingUser"));
+    }
+
+    @Test
+    void testUserExists_False() {
+        when(userService.userExists("newUser")).thenReturn(false);
+
+        assertFalse(userController.userExists("newUser"));
     }
 }

@@ -60,35 +60,38 @@ public class UserServiceTest {
         // GIVEN
         Users newUser = new Users(0, "testUser", "plainPassword", null, false);
 
-        // On simule un mot de passe encodé
+        // Spy pour pouvoir mocker uniquement certaines méthodes
+        UserService spyService = Mockito.spy(userService);
+
+        // Simuler que "testUser" n'existe PAS déjà
+        doReturn(false).when(spyService).userExists("testUser");
+
+        // Simuler l'encodage du mot de passe
         when(passwordEncoder.encode("plainPassword"))
                 .thenReturn("encodedPassword");
 
-        // On simule la création du PreparedStatement & l'exécution de la requête
+        // Simuler la préparation du Statement et l'exécution
         when(mockConnection.prepareStatement(anyString(), eq(Statement.RETURN_GENERATED_KEYS)))
                 .thenReturn(mockPreparedStatement);
 
-        // Simule l'insertion qui génère un ID 99
+        // Simuler l'insertion générant un ID
         when(mockPreparedStatement.getGeneratedKeys()).thenReturn(mockResultSet);
         when(mockResultSet.next()).thenReturn(true);
         when(mockResultSet.getInt(1)).thenReturn(99);
 
         // WHEN
-        Users createdUser = userService.addUser(newUser);
+        Users createdUser = spyService.addUser(newUser);
 
         // THEN
         verify(mockPreparedStatement).setString(1, "testUser");
         verify(mockPreparedStatement).setString(2, "encodedPassword");
-        // Role doit être "USER" par défaut si null
-        verify(mockPreparedStatement).setString(3, "USER");
-        // Le compte doit être activé
-        verify(mockPreparedStatement).setBoolean(4, true);
+        verify(mockPreparedStatement).setString(3, "USER"); // Default role
+        verify(mockPreparedStatement).setBoolean(4, true); // Activated
 
-        // Vérifications sur le résultat
         assertEquals(99, createdUser.getId_user());
         assertEquals("encodedPassword", createdUser.getPassword());
         assertEquals("USER", createdUser.getRole());
-        assertTrue(createdUser.getActivated(), "L'utilisateur doit être activé par défaut");
+        assertTrue(createdUser.getActivated());
     }
 
     @Test
@@ -184,18 +187,16 @@ public class UserServiceTest {
     void testDeleteUser_Success() throws Exception {
         // GIVEN
         int userIdToDelete = 10;
+        int authenticatedUserId = 10;
 
-        // Mock pour le prepareStatement avec un simple "executeUpdate()"
-        when(mockConnection.prepareStatement(anyString(), anyInt())).thenReturn(mockPreparedStatement);
+        when(mockConnection.prepareStatement(anyString())).thenReturn(mockPreparedStatement);
         when(mockPreparedStatement.executeUpdate()).thenReturn(1); // 1 ligne affectée
 
         // WHEN
-        userService.deleteUser(userIdToDelete);
+        userService.deleteUser(userIdToDelete, authenticatedUserId);
 
         // THEN
-        verify(mockConnection).prepareStatement(
-                contains("UPDATE user SET activated = false"), eq(Statement.RETURN_GENERATED_KEYS)
-        );
+        verify(mockConnection).prepareStatement(contains("UPDATE user SET activated = false"));
         verify(mockPreparedStatement).setInt(1, userIdToDelete);
         verify(mockPreparedStatement).executeUpdate();
     }
@@ -204,31 +205,36 @@ public class UserServiceTest {
     void testDeleteUser_NoRowsAffected() throws Exception {
         // GIVEN
         int userIdToDelete = 99;
-        when(mockConnection.prepareStatement(anyString(), anyInt())).thenReturn(mockPreparedStatement);
-        // Simule qu'aucune ligne n'a été affectée
-        when(mockPreparedStatement.executeUpdate()).thenReturn(0);
+        int authenticatedUserId = 99;
+
+        when(mockConnection.prepareStatement(anyString())).thenReturn(mockPreparedStatement);
+        when(mockPreparedStatement.executeUpdate()).thenReturn(0); // Simule qu'aucune ligne affectée
 
         // WHEN & THEN
-        userService.deleteUser(userIdToDelete);
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            userService.deleteUser(userIdToDelete, authenticatedUserId);
+        });
+
+        assertTrue(exception.getMessage().contains("Impossible de désactiver l'utilisateur"));
     }
 
     @Test
     void testUpdateUser_Success() throws Exception {
         // GIVEN
         int userId = 5;
-        // On mock getUserById(...) pour renvoyer un user existant
         Users existingUser = new Users(userId, "oldName", "oldPass", "USER", true);
 
-        // On peut "espionner" (spy) userService pour faire un "when(...).thenReturn(existingUser)".
-
+        // Spy pour intercepter uniquement certaines méthodes
         UserService spyService = Mockito.spy(userService);
-        doReturn(existingUser).when(spyService).getUserById(userId);
 
-        // Pour l'update, on simule l'exécution
+        doReturn(existingUser).when(spyService).getUserById(userId);
+        doReturn(false).when(spyService).userExists("newName"); // Important : simuler que le nouveau username n'existe pas déjà
+
+        // Mock de l'update SQL
         when(mockConnection.prepareStatement(anyString())).thenReturn(mockPreparedStatement);
         when(mockPreparedStatement.executeUpdate()).thenReturn(1);
 
-        // Nouvel user
+        // Préparation du nouvel utilisateur
         Users updatedInfo = new Users(0, "newName", "newPass", "ADMIN", true);
         when(passwordEncoder.encode("newPass")).thenReturn("encodedNewPass");
 
@@ -236,9 +242,8 @@ public class UserServiceTest {
         Users result = spyService.updateUser(userId, updatedInfo);
 
         // THEN
-        // Vérification
         assertNotNull(result);
-        assertEquals(userId, result.getId_user());    // l'ID ne devrait pas changer
+        assertEquals(userId, result.getId_user());
         assertEquals("newName", result.getUsername());
         assertEquals("encodedNewPass", result.getPassword());
         assertEquals("ADMIN", result.getRole());

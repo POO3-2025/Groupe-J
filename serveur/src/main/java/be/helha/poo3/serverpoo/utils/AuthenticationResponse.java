@@ -1,14 +1,20 @@
 package be.helha.poo3.serverpoo.utils;
 
+/**
+ * Réponse envoyée après une authentification réussie.
+ * Contient les tokens JWT, un message, et l'ID utilisateur.
+ */
 public class AuthenticationResponse {
     private String accessToken;
     private String refreshToken;
     private String message;
+    private int id_user;
 
-    public AuthenticationResponse(String accessToken, String refreshToken, String message) {
+    public AuthenticationResponse(String accessToken, String refreshToken, String message, int id_user) {
         this.accessToken = accessToken;
         this.refreshToken = refreshToken;
         this.message = message;
+        this.id_user = id_user;
     }
 
     public String getAccessToken() {
@@ -33,5 +39,13 @@ public class AuthenticationResponse {
 
     public void setMessage(String message) {
         this.message = message;
+    }
+
+    public int getId_user() {
+        return id_user;
+    }
+
+    public void setId_user(int id_user) {
+        this.id_user = id_user;
     }
 }

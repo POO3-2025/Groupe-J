@@ -59,40 +59,47 @@ public class UserController {
     @PostMapping
     public Users addUser(@RequestBody Users user) {
         return userService.addUser(user);
-        //return user;
     }
 
     /**
      * Supprime un utilisateur de manière logique
      * via son ID dans la base de données.
      *
-     * @param id_user l'id de l'utilisateur à supprimer
+     * @param id_user L'ID de l'utilisateur à désactiver.
+     * @param authHeader L'en-tête Authorization contenant le token JWT ("Bearer {token}").
+     * @return Une réponse HTTP indiquant le succès ou l'erreur rencontrée.
      */
-    @DeleteMapping(path="/{id_user}")
-    public void deleteUser(@PathVariable int id_user) {
-        userService.deleteUser(id_user);
+    @DeleteMapping("/{id_user}")
+    public ResponseEntity<?> deleteUser(@PathVariable int id_user, @RequestHeader(value = "Authorization", required = false) String authHeader) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Vous devez être connecté pour supprimer votre compte.");
+        }
+
+        String token = authHeader.substring(7);
+
+        try {
+            int authenticatedUserId = jwtUtils.getUserIdFromToken(token);
+            userService.deleteUser(id_user, authenticatedUserId);
+            return ResponseEntity.ok().build();
+        } catch (JwtException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token invalide");
+        }
     }
 
     /**
      * Met à jour les informations d'un utilisateur spécifique, à condition que l'utilisateur
      * authentifié via le token JWT soit bien celui correspondant à l'ID dans l'URL.
      *
-     * <p>Cette méthode vérifie d'abord la présence d'un en-tête Authorization contenant un token JWT
+     * Cette méthode vérifie d'abord la présence d'un en-tête Authorization contenant un token JWT
      * valide. Ensuite, elle extrait l'ID utilisateur du token et le compare à l'ID fourni dans
-     * le chemin de la requête pour s'assurer que l'utilisateur ne peut modifier que ses propres données.</p>
+     * le chemin de la requête pour s'assurer que l'utilisateur ne peut modifier que ses propres données.
      *
      * @param authHeader l'en-tête HTTP "Authorization" contenant le token JWT (de la forme "Bearer {token}")
      * @param id_user l'identifiant de l'utilisateur à modifier (extrait de l'URL)
      * @param userToUpdate les nouvelles données à appliquer à l'utilisateur
      * @return une réponse HTTP contenant l'utilisateur mis à jour en cas de succès,
-     *         ou un message d'erreur approprié avec le code HTTP correspondant :
-     *         <ul>
-     *             <li><b>403 Forbidden</b> : si l'en-tête est manquant ou que l'utilisateur tente de modifier un autre compte</li>
-     *             <li><b>401 Unauthorized</b> : si le token est invalide</li>
-     *             <li><b>500 Internal Server Error</b> : en cas d'erreur lors de la mise à jour</li>
-     *         </ul>
+     *         ou un message d'erreur approprié avec le code HTTP
      */
-
     @PutMapping(path="/{id_user}")
     public ResponseEntity<?> updateUser(
             @RequestHeader(value = "Authorization", required = false) String authHeader,

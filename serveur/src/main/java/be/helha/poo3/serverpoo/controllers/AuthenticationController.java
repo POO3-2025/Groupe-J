@@ -15,6 +15,9 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+/**
+ * Contrôleur gérant l'authentification des utilisateurs.
+ */
 @RestController
 @RequestMapping("/auth")
 public class AuthenticationController {
@@ -46,27 +49,20 @@ public class AuthenticationController {
             String accessToken = jwtUtils.generateToken(authentication, user.getId_user());
             String refreshToken = jwtUtils.generateRefreshToken(user.getUsername());
 
-            return ResponseEntity.ok(new AuthenticationResponse(accessToken, refreshToken, "Authentification réussie !"));
+            // Retourne également id_user dans la réponse
+            return ResponseEntity.ok(new AuthenticationResponse(accessToken, refreshToken, "Authentification réussie !", user.getId_user()));
 
         } catch (AuthenticationException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Échec de l'authentification");
         }
     }
 
-
-    static class LoginRequest {
-        private String username;
-        private String password;
-
-        public String getUsername() {
-            return username;
-        }
-
-        public String getPassword() {
-            return password;
-        }
-    }
-
+    /**
+     * Endpoint pour rafraîchir un access token via un refresh token valide.
+     *
+     * @param request Contient le refresh token.
+     * @return Nouveau access token et informations utilisateur.
+     */
     @PostMapping("/refresh")
     public ResponseEntity<?> refreshToken(@RequestBody RefreshRequest request) {
         String refreshToken = request.getRefreshToken();
@@ -79,6 +75,20 @@ public class AuthenticationController {
         Users user = userService.getUserByUsername(username);
 
         String newAccessToken = jwtUtils.generateTokenFromUser(user);
-        return ResponseEntity.ok(new AuthenticationResponse(newAccessToken, refreshToken, "Nouveau token généré"));
+
+        return ResponseEntity.ok(new AuthenticationResponse(newAccessToken, refreshToken, "Nouveau token généré", user.getId_user()));
+    }
+
+    static class LoginRequest {
+        private String username;
+        private String password;
+
+        public String getUsername() {
+            return username;
+        }
+
+        public String getPassword() {
+            return password;
+        }
     }
 }

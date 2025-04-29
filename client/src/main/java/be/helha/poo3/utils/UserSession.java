@@ -6,6 +6,7 @@ package be.helha.poo3.utils;
 public class UserSession {
     private static String accessToken;
     private static String username;
+    private static int id_user;
 
     public static String getAccessToken() {
         return accessToken;
@@ -23,9 +24,17 @@ public class UserSession {
         UserSession.username = username;
     }
 
+    public static int getId_user() {
+        return id_user;
+    }
+
+    public static void setId_user(int id_user) {
+        UserSession.id_user = id_user;
+    }
+
     public static void clear() {
         accessToken = null;
         username = null;
+        id_user = 0;
     }
 }
-
