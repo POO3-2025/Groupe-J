@@ -75,6 +75,7 @@ public class AuthenticationController {
         Users user = userService.getUserByUsername(username);
 
         String newAccessToken = jwtUtils.generateTokenFromUser(user);
+        refreshToken = jwtUtils.generateRefreshToken(user.getUsername());
 
         return ResponseEntity.ok(new AuthenticationResponse(newAccessToken, refreshToken, "Nouveau token généré", user.getId_user()));
     }
