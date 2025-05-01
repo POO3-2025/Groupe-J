@@ -18,6 +18,11 @@ repositories {
 dependencies {
     testImplementation platform('org.junit:junit-bom:5.10.0')
     testImplementation 'org.junit.jupiter:junit-jupiter'
+
+    implementation 'com.googlecode.lanterna:lanterna:3.1.1'
+    implementation 'com.squareup.okhttp3:okhttp:4.9.3' // pour les appels HTTP
+    implementation 'com.google.code.gson:gson:2.8.9'   // pour parser les JSON
+
     implementation 'com.google.code.gson:gson:2.10.1'
     implementation 'org.javassist:javassist:3.29.2-GA'
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.0'

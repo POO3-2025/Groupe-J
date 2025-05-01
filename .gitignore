@@ -34,3 +34,6 @@ Dockerfile
 *.tar
 *.war
 *.jar
+
+data/
+serveur/data/
