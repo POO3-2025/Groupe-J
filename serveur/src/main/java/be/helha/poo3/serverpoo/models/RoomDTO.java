@@ -7,12 +7,14 @@ public class RoomDTO {
     private String id;
     private boolean hasChest;
     private boolean hasMonster;
+    private Chest chest;
     private List<String> exits;
 
     public RoomDTO(Room room) {
         this.id = room.getId();
-        this.hasChest = room.hasChest();
-        this.hasMonster = room.hasMonster();
+        this.chest = room.getChest();
+        this.hasChest = (room.getChest() != null);
+        this.hasMonster = true; // ou ajoute un attribut `hasMonster` dans Room si manquant
         this.exits = room.getExits().keySet().stream()
                 .map(Enum::name)
                 .collect(Collectors.toList());
@@ -22,6 +24,7 @@ public class RoomDTO {
     public String getId() { return id; }
     public boolean isHasChest() { return hasChest; }
     public boolean isHasMonster() { return hasMonster; }
+    public Chest getChest() { return chest; }
     public List<String> getExits() { return exits; }
 }
 

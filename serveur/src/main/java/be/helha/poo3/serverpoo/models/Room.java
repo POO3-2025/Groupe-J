@@ -8,20 +8,30 @@ public class Room {
     }
 
     private EnumMap<Direction, Room> exits;
-    private boolean hasMonster;
-    private boolean hasChest;
+    private Chest chest;
     private String id;
     private int x, y;
 
-    public Room(boolean hasMonster, boolean hasChest) {
+
+    public Room(boolean hasMonster, boolean hasChest , Chest chest) {
         this.id = x+":"+y;
-        this.hasMonster = hasMonster;
-        this.hasChest = hasChest;
+        if (hasChest){
+            this.chest = chest;
+        }else this.chest = null;
+
         this.exits = new EnumMap<>(Direction.class);
     }
 
     public String getId() {
         return id;
+    }
+
+    public Chest getChest() {
+        return chest;
+    }
+
+    public void setChest(Chest chest) {
+        this.chest = chest;
     }
 
     public void setExit(Direction direction, Room neighbor) {
@@ -36,13 +46,6 @@ public class Room {
         return exits;
     }
 
-    public boolean hasMonster() {
-        return hasMonster;
-    }
-
-    public boolean hasChest() {
-        return hasChest;
-    }
 
     public void setPosition(int x, int y) {
         this.x = x;
@@ -59,13 +62,16 @@ public class Room {
         return y;
     }
 
+    public Item openChest() {
+        return chest.open();
+    }
+
 
     @Override
     public String toString() {
         return "Room{" +
                 "id='" + id + '\'' +
-                ", hasChest=" + hasChest +
-                ", hasMonster=" + hasMonster +
+                ",le coffre contient un(e) " + chest.getItem() +
                 ", exits=" + exits +
                 '}';
     }
