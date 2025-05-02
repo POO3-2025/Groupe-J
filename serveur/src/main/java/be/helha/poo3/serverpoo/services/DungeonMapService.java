@@ -1,11 +1,8 @@
 package be.helha.poo3.serverpoo.services;
 
-import be.helha.poo3.serverpoo.models.Chest;
-import be.helha.poo3.serverpoo.models.Item;
-import be.helha.poo3.serverpoo.models.Room;
+import be.helha.poo3.serverpoo.models.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import be.helha.poo3.serverpoo.models.Rarity;
 import jakarta.annotation.PostConstruct;
 
 
@@ -25,7 +22,7 @@ public class DungeonMapService {
 
     @PostConstruct
     public void init(){
-        generateMapWithCoordinates(10);
+        generateMapWithCoordinates(100);
     }
 
     private void generateMapWithCoordinates(int count) {
@@ -69,7 +66,9 @@ public class DungeonMapService {
         boolean hasChest = random.nextBoolean();
 
         Chest chest = null;
+        Monster monster = null;
 
+        //s'il y a un coffre, on choisit un rareté et on y insère un objet de la rareté choisie
         if (hasChest) {
             Rarity chosenRarity = getRandomRarity();
             List<Item> items = itemLoaderService.findByRarity(chosenRarity);
@@ -83,7 +82,17 @@ public class DungeonMapService {
             }
         }
 
-        return new Room(hasMonster, hasChest, chest);
+        //s'il y a un monstre, génère une rareté aléatoire puis génère un monstre aléatoire dans cette rareté
+        if(hasMonster){
+            Rarity rarity = getRandomRarity(); // réutilise ta méthode existante
+            monster = MonsterFactory.generateMonsterByRarity(rarity);
+
+            if(monster == null){
+                System.out.println("Aucun monstre trouvé pour la rareté : " + rarity);
+            }
+        }
+
+        return new Room(hasMonster, hasChest, chest, monster);
     }
 
     private void connectRooms(Room a, Room b, Room.Direction dir) {
