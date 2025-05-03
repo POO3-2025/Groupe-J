@@ -4,6 +4,8 @@ import be.helha.poo3.serverpoo.models.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import jakarta.annotation.PostConstruct;
+import org.springframework.scheduling.annotation.Scheduled;
+
 
 
 
@@ -11,6 +13,7 @@ import jakarta.annotation.PostConstruct;
 import java.awt.*;
 import java.util.*;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class DungeonMapService {
@@ -20,9 +23,13 @@ public class DungeonMapService {
     private Map<Point, Room> roomGrid = new HashMap<>();
     private Random random = new Random();
 
+    /*
+    Création de la map
+     */
+
     @PostConstruct
     public void init(){
-        generateMapWithCoordinates(100);
+        generateMapWithCoordinates(20);
     }
 
     private void generateMapWithCoordinates(int count) {
@@ -148,5 +155,100 @@ public class DungeonMapService {
         else if (randomValue < 0.9) return Rarity.rare;      // 15%
         else if (randomValue < 0.98) return Rarity.epic;     // 8%
         else return Rarity.legendary;                        // 2%
+    }
+
+
+    /*
+    gestion du respawn des coffres et des monstres
+     */
+
+    private void spawnChests(int count) {
+        //vérifie que la salle n'a pas déjà un coffre
+        List<Room> eligibleRooms = roomGrid.values().stream()
+                .filter(room -> room.getChest() == null)
+                .collect(Collectors.toList());
+        Collections.shuffle(eligibleRooms);
+
+        for (int i = 0; i < Math.min(count, eligibleRooms.size()); i++) {
+            spawnChestInRoom(eligibleRooms.get(i));
+        }
+    }
+
+    private void spawnChestInRoom(Room room) {
+        Rarity rarity = getRandomRarity();
+        List<Item> items = itemLoaderService.findByRarity(rarity);
+        if (!items.isEmpty()) {
+            Item item = items.get(random.nextInt(items.size()));
+            room.setChest(new Chest(item));
+            room.setHasChest(true);
+        }
+    }
+
+    private void spawnMonsters(int count) {
+        List<Room> eligibleRooms = roomGrid.values().stream()
+                .filter(room -> room.getMonster() == null)
+                .collect(Collectors.toList());
+        Collections.shuffle(eligibleRooms);
+
+        for (int i = 0; i < Math.min(count, eligibleRooms.size()); i++) {
+            spawnMonsterInRoom(eligibleRooms.get(i));
+        }
+    }
+
+    private void spawnMonsterInRoom(Room room) {
+        room.setMonster(MonsterFactory.generateRandomMonster());
+        room.setHasMonster(true);
+    }
+
+    //toutes les 60 secondes, on exécute cette méthode qui gère le respawn
+    @Scheduled(fixedRate = 60000) // toutes les 60 secondes
+    public void manageRespawn() {
+        int totalRooms = roomGrid.size();
+        int chestCount = 0;
+        int monsterCount = 0;
+
+        //compte le nombre de coffres et de monstres
+        for (Room room : roomGrid.values()) {
+            if (room.getChest() != null) chestCount++;
+            if (room.getMonster() != null) monsterCount++;
+        }
+        //calcule le pourcentage de coffres et de monstres par rapport aux nombre de salles
+        double chestRatio = (double) chestCount / totalRooms;
+        double monsterRatio = (double) monsterCount / totalRooms;
+
+
+
+            // force le spawn si le ratio est <30%
+            if (chestRatio < 0.3) {
+                int target = (int) (0.3 * totalRooms);
+                if(target>chestCount) {
+                    spawnChests(target - chestCount);
+                }
+                //s'il y a moins de 75% des salles qui ont un coffre
+            } else if(chestRatio < 0.75) {
+                //sinon, pour chaque salle, 10% de chance de spawn un chest si la salle n'en a pas déjà
+                for (Room room : roomGrid.values()) {
+                    if (room.getChest() == null && Math.random() < 0.1) {
+                        spawnChestInRoom(room);
+                    }
+                }
+            }
+
+
+        // force le spawn si le ratio est <30%
+        if (monsterRatio < 0.3) {
+            int target = (int) (0.3 * totalRooms);
+            if(target>monsterCount) {
+                spawnMonsters(target - monsterCount);
+            }
+            //s'il y a moins de 75% des salles qui ont un coffre
+        } else if(monsterRatio < 0.75) {
+            //sinon, pour chaque salle, 10% de chance de spawn un monstre si la salle n'en a pas déjà
+            for (Room room : roomGrid.values()) {
+                if (room.getMonster() == null && Math.random() < 0.1) {
+                    spawnMonsterInRoom(room);
+                }
+            }
+        }
     }
 }

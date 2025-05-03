@@ -12,10 +12,14 @@ public class Room {
     private Monster monster;
     private String id;
     private int x, y;
+    private boolean hasMonster;
+    private boolean hasChest;
 
 
     public Room(boolean hasMonster, boolean hasChest, Chest chest, Monster monster){
         this.id = x + ":" + y;
+        this.hasMonster = hasMonster;
+        this.hasChest = hasChest;
 
         //s'il y a un coffre, on l'instancie
         if (hasChest) {
@@ -62,6 +66,21 @@ public class Room {
         return exits;
     }
 
+    public boolean getHasChest(){
+        return hasChest;
+    }
+
+    public void setHasChest(boolean hasChest){
+        this.hasChest = hasChest;
+    }
+
+    public boolean getHasMonster(){
+        return hasMonster;
+    }
+
+    public void setHasMonster(boolean hasMonster){
+        this.hasMonster = hasMonster;
+    }
 
     public void setPosition(int x, int y){
         this.x = x;
