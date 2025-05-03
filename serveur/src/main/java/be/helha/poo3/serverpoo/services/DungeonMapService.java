@@ -23,13 +23,17 @@ public class DungeonMapService {
     private Map<Point, Room> roomGrid = new HashMap<>();
     private Random random = new Random();
 
+    public void setItemLoaderService(ItemLoaderService itemLoaderService) {
+        this.itemLoaderService = itemLoaderService;
+    }
+
     /*
     Création de la map
      */
 
     @PostConstruct
     public void init(){
-        generateMapWithCoordinates(20);
+        generateMapWithCoordinates(50);
     }
 
     private void generateMapWithCoordinates(int count) {
@@ -66,6 +70,27 @@ public class DungeonMapService {
             }
         }
         startRoom = start;
+
+        addExtraConnections(0.25);
+    }
+
+
+    private void addExtraConnections(double prob) {
+        for (Room room : roomGrid.values()) {
+            Point p = new Point(room.getX(), room.getY());
+
+            for (Room.Direction dir : Room.Direction.values()) {
+                Point neighbourPos = move(p, dir);
+                Room neighbour = roomGrid.get(neighbourPos);
+
+                // mur présent ? (la pièce existe mais il n’y a pas d’exit)
+                if (neighbour != null && room.getExit(dir) == null) {
+                    if (random.nextDouble() < prob) {
+                        connectRooms(room, neighbour, dir);  // crée l’ouverture
+                    }
+                }
+            }
+        }
     }
 
     private Room createRoom() {

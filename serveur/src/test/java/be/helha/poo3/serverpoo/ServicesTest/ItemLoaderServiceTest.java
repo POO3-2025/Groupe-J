@@ -1,11 +1,10 @@
-package be.helha.poo3.serverpoo.servicesTest;
+package be.helha.poo3.serverpoo.ServicesTest;
 
 import be.helha.poo3.serverpoo.config.TestMongoConfig;
 import be.helha.poo3.serverpoo.models.Item;
 import be.helha.poo3.serverpoo.models.Rarity;
 import be.helha.poo3.serverpoo.services.ItemLoaderService;
 import be.helha.poo3.serverpoo.components.DynamicClassGenerator;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
