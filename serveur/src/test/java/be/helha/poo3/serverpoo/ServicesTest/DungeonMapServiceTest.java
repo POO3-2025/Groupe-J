@@ -2,6 +2,7 @@ package be.helha.poo3.serverpoo.ServicesTest;
 import be.helha.poo3.serverpoo.models.*;
 import be.helha.poo3.serverpoo.services.DungeonMapService;
 import be.helha.poo3.serverpoo.services.ItemLoaderService;
+import be.helha.poo3.serverpoo.models.Room.Direction;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -79,5 +80,63 @@ public class DungeonMapServiceTest {
         assertTrue(chestCount >= 0);
         assertTrue(monsterCount >= 0);
     }
+
+
+    //test que les sorties sont liées à des salles existantes
+    @Test
+    public void testExitsToExistingRoom() {
+        for (Room room : service.getAllRooms()) {
+            for (Map.Entry<Direction, Room> exit : room.getExits().entrySet()) {
+                assertNotNull(exit.getValue(), "Sortie invalide vers une salle inexistante depuis " + room.getId());
+            }
+        }
+    }
+
+    //test que les sorties aillent dans les 2 sens
+    @Test
+    public void testExitsReciprocal() {
+        for (Room room : service.getAllRooms()) {
+            for (Map.Entry<Direction, Room> entry : room.getExits().entrySet()) {
+                Room neighbour = entry.getValue();
+                Direction opposite = service.opposite(entry.getKey());
+                assertEquals(room, neighbour.getExit(opposite),
+                        "La sortie depuis " + room.getId() + " vers " + entry.getKey()
+                                + " n'est pas réciproque avec " + neighbour.getId());
+            }
+        }
+    }
+
+    //test que chaque room est atteignable
+    @Test
+    public void testRoomsReachable() {
+        Room start = service.getStartRoom();
+        Set<Room> visited = new HashSet<>();
+        Queue<Room> queue = new LinkedList<>();
+        queue.add(start);
+        visited.add(start);
+
+        while (!queue.isEmpty()) {
+            Room current = queue.poll();
+            for (Room neighbor : current.getExits().values()) {
+                if (!visited.contains(neighbor)) {
+                    visited.add(neighbor);
+                    queue.add(neighbor);
+                }
+            }
+        }
+
+        assertEquals(service.getAllRooms().size(), visited.size(),
+                "Nombre de salles atteignables incorrect depuis la salle de départ");
+    }
+
+    @Test
+    public void testUniqueRoomID() {
+        Set<String> ids = new HashSet<>();
+        for (Room room : service.getAllRooms()) {
+            assertTrue(ids.add(room.getId()), "Doublon d'identifiant trouvé : " + room.getId());
+        }
+    }
+
 }
+
 

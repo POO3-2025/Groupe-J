@@ -33,7 +33,7 @@ public class DungeonMapService {
 
     @PostConstruct
     public void init(){
-        generateMapWithCoordinates(50);
+        generateMapWithCoordinates(20);
     }
 
     private void generateMapWithCoordinates(int count) {
@@ -145,7 +145,7 @@ public class DungeonMapService {
         return pos;
     }
 
-    private Room.Direction opposite(Room.Direction dir) {
+    public Room.Direction opposite(Room.Direction dir) {
         switch (dir) {
             case NORTH: return Room.Direction.SOUTH;
             case SOUTH: return Room.Direction.NORTH;
