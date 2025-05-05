@@ -37,7 +37,7 @@ public class DungeonMapServiceTest {
     public void testMapIsGenerated() {
         Collection<Room> rooms = service.getAllRooms();
         assertFalse(rooms.isEmpty());
-        assertEquals(50, rooms.size());
+        assertEquals(20, rooms.size());
     }
 
     @Test
