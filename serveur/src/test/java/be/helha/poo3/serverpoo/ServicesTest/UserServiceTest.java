@@ -1,4 +1,4 @@
-package be.helha.poo3.serverpoo.servicesTest;
+package be.helha.poo3.serverpoo.ServicesTest;
 
 import be.helha.poo3.serverpoo.models.Users;
 import be.helha.poo3.serverpoo.services.UserService;
