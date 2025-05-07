@@ -34,4 +34,7 @@ Dockerfile
 *.tar
 *.war
 *.jar
+
+### Pour la DB MySQL (Hus0w) ###
+*.sock
 data/
