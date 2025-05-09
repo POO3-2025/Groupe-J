@@ -1,0 +1,35 @@
+services:
+  mongodb:
+    image: mongo:8.0.1
+    ports:
+      - '27017:27017'
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: game
+      MONGO_INITDB_ROOT_PASSWORD: password
+    volumes:
+      - ./data/mongodb/data:/data/db:rw
+
+  mysql:
+    image: mysql:latest
+    ports:
+      - '3366:3306'
+    environment:
+      MYSQL_ROOT_PASSWORD: rootroot
+      MYSQL_DATABASE: poo3_server_mysql
+      MYSQL_USER: poo3_game
+      MYSQL_PASSWORD: game
+    volumes:
+      - ./data/mysql:/var/lib/mysql:rw
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    links:
+      - mysql:db
+    ports:
+      - 8000:80
+    environment:
+      MYSQL_USER: helha
+      MYSQL_PASSWORD: helha
+      MYSQL_ROOT_PASSWORD: root
+    depends_on:
+      - mysql
