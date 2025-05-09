@@ -3,6 +3,9 @@ package be.helha.poo3.serverpoo.models;
 import org.bson.types.ObjectId;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+
 public class Item {
     @JsonProperty("_id")
     protected ObjectId id;
@@ -99,5 +102,34 @@ public class Item {
                 ", rarity=" + rarity + '\'' +
                 ", description='" + description +
                 '}';
+    }
+    /*Test de getter et setter dynamique servant aux classes enfants*/
+    public int getInt(String field, Object target) {
+        try {
+            String getterName = "get" + Character.toUpperCase(field.charAt(0)) + field.substring(1);
+            Method getter;
+            getter = target.getClass().getMethod(getterName);
+            Object result = getter.invoke(target);
+            return result instanceof Integer ? (Integer) result : null;
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+
+    public boolean setInt(Object target, String field, int value) {
+        String setterName = "set" + Character.toUpperCase(field.charAt(0)) + field.substring(1);
+        try {
+            Method setter;
+            try {
+                setter = target.getClass().getMethod(setterName, int.class);
+            } catch (NoSuchMethodException ex) {
+                setter = target.getClass().getMethod(setterName, Integer.class);
+            }
+            setter.invoke(target, value);
+            return true;
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
