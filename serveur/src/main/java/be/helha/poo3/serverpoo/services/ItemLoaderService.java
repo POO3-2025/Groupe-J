@@ -80,10 +80,11 @@ public class ItemLoaderService {
         return loadedItems;
     }
 
-    public List<Item> findByName(String name) {
+    public Item findByName(String name) {
         return loadedItems.stream()
                 .filter(item -> item.getName().equalsIgnoreCase(name))
-                .toList();
+                .findFirst()
+                .orElse(null);
     }
 
     public List<Item> findByType(String type) {

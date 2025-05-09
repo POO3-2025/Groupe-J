@@ -104,12 +104,12 @@ public class Item {
                 '}';
     }
     /*Test de getter et setter dynamique servant aux classes enfants*/
-    public int getInt(String field, Object target) {
+    public int getInt(String field) {
         try {
             String getterName = "get" + Character.toUpperCase(field.charAt(0)) + field.substring(1);
             Method getter;
-            getter = target.getClass().getMethod(getterName);
-            Object result = getter.invoke(target);
+            getter = this.getClass().getMethod(getterName);
+            Object result = getter.invoke(this);
             return result instanceof Integer ? (Integer) result : null;
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
             throw new RuntimeException(e);
@@ -117,16 +117,16 @@ public class Item {
 
     }
 
-    public boolean setInt(Object target, String field, int value) {
+    public boolean setInt(String field, int value) {
         String setterName = "set" + Character.toUpperCase(field.charAt(0)) + field.substring(1);
         try {
             Method setter;
             try {
-                setter = target.getClass().getMethod(setterName, int.class);
+                setter = this.getClass().getMethod(setterName, int.class);
             } catch (NoSuchMethodException ex) {
-                setter = target.getClass().getMethod(setterName, Integer.class);
+                setter = this.getClass().getMethod(setterName, Integer.class);
             }
-            setter.invoke(target, value);
+            setter.invoke(this, value);
             return true;
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
             throw new RuntimeException(e);

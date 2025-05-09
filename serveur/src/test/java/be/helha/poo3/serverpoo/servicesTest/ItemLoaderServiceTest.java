@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.lang.reflect.Method;
@@ -68,11 +69,9 @@ public class ItemLoaderServiceTest {
 
     @Test
     public void shouldFindItemByName() {
-        List<Item> result = service.findByName("Basic Sword");
-        assertFalse(result.isEmpty(), "Un ou plusieurs objets doivent avoir le nom 'Basic Sword'");
-        for (Item item : result) {
-            assertEquals("Basic Sword", item.getName());
-        }
+        Item result = service.findByName("Basic Sword");
+        assertNotNull(result, "Aucun objet trouvé avec le nom 'Basic Sword'");
+        assertEquals("Basic Sword", result.getName());
     }
 
     @Test
@@ -124,6 +123,18 @@ public class ItemLoaderServiceTest {
         } catch (NoSuchMethodException e) {
             fail("Le champ dynamique 'damage' est attendu mais manquant.");
         }
+    }
+
+    @Test
+    @DirtiesContext
+    public void dynamicItemIntGetterAndSetter() throws Exception {
+        Item item = service.findByName("Basic Sword");
+        assertNotNull(item);
+        int value = item.getInt("damage");
+        assertEquals(50, value);
+        item.setInt("damage", 20);
+        value = item.getInt("damage");
+        assertEquals(20, value);
     }
 
     private Object getFieldValue(Object obj, String field) throws Exception {
