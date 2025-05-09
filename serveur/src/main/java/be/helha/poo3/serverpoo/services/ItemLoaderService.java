@@ -40,33 +40,33 @@ public class ItemLoaderService {
                 Class<?> clazz = DynamicClassGenerator.getClasses().get(type);
                 Item instance = (Item) clazz.getDeclaredConstructor().newInstance();
                 for (String key : doc.keySet()) {
-                    if (key.equals("_id")) {
-                        Method setId = clazz.getMethod("setId", ObjectId.class);
-                        setId.invoke(instance, doc.getObjectId("_id"));
-                        continue;
-                    }
-
-                    if (key.equals("Rarity")){
-                        Method setRarity = clazz.getMethod("setRarity", Rarity.class);
-                        Rarity enumValue = Rarity.valueOf(doc.getString("Rarity"));
-                        setRarity.invoke(instance, enumValue);
-                        continue;
-                    }
-
-                    Object value = doc.get(key);
-                    String methodName = "set" + Character.toUpperCase(key.charAt(0)) + key.substring(1);
-
-                    try {
-                        Method setter;
-                        try {
-                            setter = clazz.getMethod(methodName, value.getClass());
-                        } catch (NoSuchMethodException e) {
-                            setter = findCompatibleSetter(clazz, methodName, value);
-                        }
-                        setter.invoke(instance, value);
-                    }
-                    catch (Exception e) {
-                        System.out.println("Impossible de créer le champs : "+ key + "->" + e.getMessage());
+                    switch (key){
+                        case "_id":
+                            instance.setId(doc.getObjectId(key));
+                            break;
+                        case "Name":
+                            instance.setName(doc.getString(key));
+                            break;
+                        case "Type":
+                            instance.setType(doc.getString(key));
+                            break;
+                        case "SubType":
+                            instance.setSubType(doc.getString(key));
+                            break;
+                        case "Rarity":
+                            instance.setRarity(Rarity.valueOf(doc.getString(key)));
+                            break;
+                        case "Description":
+                            instance.setDescription(doc.getString(key));
+                            break;
+                        default:
+                            Object val = doc.get(key);
+                            if (val instanceof Number n) {                          // JSON -> nombre
+                                instance.setInt(key, n.intValue());
+                            } else if (val instanceof String s && !s.isBlank()) {   // JSON -> chaîne
+                                instance.setInt(key, Integer.parseInt(s));
+                            }
+                            break;
                     }
                 }
 
