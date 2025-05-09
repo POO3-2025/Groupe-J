@@ -3,8 +3,15 @@ package be.helha.poo3.serverpoo.models;
 import org.bson.types.ObjectId;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class Item {
     @JsonProperty("_id")
@@ -131,5 +138,23 @@ public class Item {
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public List<String> getAdditionalAttributes() {
+        Set<String> core = Arrays.stream(Item.class.getDeclaredFields())
+                .map(Field::getName)
+                .collect(Collectors.toSet());
+
+        List<String> extras = new ArrayList<>();
+        for (Class<?> clazz = getClass(); clazz != null && clazz != Item.class; clazz = clazz.getSuperclass()) {
+            for (Field field : clazz.getDeclaredFields()) {
+                int modifiers = field.getModifiers();
+                if (Modifier.isStatic(modifiers) || Modifier.isTransient(modifiers) || core.contains(field.getName())) {
+                    continue;
+                }
+                extras.add(field.getName());
+            }
+        }
+        return extras;
     }
 }

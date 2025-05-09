@@ -137,6 +137,15 @@ public class ItemLoaderServiceTest {
         assertEquals(20, value);
     }
 
+    @Test
+    public void checkAttributesList() throws Exception {
+        Item item = service.findByName("Basic Sword");
+        assertNotNull(item);
+        List<String> attributes = item.getAdditionalAttributes();
+        assertEquals(1, attributes.size(),"Il doit y avoir exactement un attribut supplémentaire");
+        assertTrue(attributes.contains("damage"), "L'attribut « damage » est attendu");
+    }
+
     private Object getFieldValue(Object obj, String field) throws Exception {
         String methodName = "get" + Character.toUpperCase(field.charAt(0)) + field.substring(1);
         Method method = obj.getClass().getMethod(methodName);
