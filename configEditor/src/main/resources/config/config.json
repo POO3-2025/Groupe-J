@@ -19,17 +19,17 @@
     "mongoDB": {
       "production": {
         "host": "localhost",
-        "port": 27020,
-        "database": "prod_db",
-        "user": "sa",
-        "password": "1234"
+        "port": 27017,
+        "database": "rpgdb",
+        "user": "game",
+        "password": "password"
       },
       "test": {
         "host": "localhost",
-        "port": 27020,
-        "database": "test_db",
-        "user": "sa",
-        "password": "1234"
+        "port": 27017,
+        "database": "rpgdb_test",
+        "user": "game",
+        "password": "password"
       }
     }
   }
