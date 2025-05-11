@@ -3,6 +3,13 @@ package be.helha.poo3.serverpoo.models;
 import org.bson.types.ObjectId;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.*;
+import java.util.stream.Collectors;
+
 public class Item {
     @JsonProperty("_id")
     protected ObjectId id;
@@ -99,5 +106,70 @@ public class Item {
                 ", rarity=" + rarity + '\'' +
                 ", description='" + description +
                 '}';
+    }
+    /*Test de getter et setter dynamique servant aux classes enfants*/
+    public int getInt(String field) {
+        try {
+            String getterName = "get" + java.lang.Character.toUpperCase(field.charAt(0)) + field.substring(1);
+            Method getter;
+            getter = this.getClass().getMethod(getterName);
+            Object result = getter.invoke(this);
+            return result instanceof Integer ? (Integer) result : null;
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+
+    public boolean setInt(String field, int value) {
+        String setterName = "set" + java.lang.Character.toUpperCase(field.charAt(0)) + field.substring(1);
+        try {
+            Method setter;
+            try {
+                setter = this.getClass().getMethod(setterName, int.class);
+            } catch (NoSuchMethodException ex) {
+                setter = this.getClass().getMethod(setterName, Integer.class);
+            }
+            setter.invoke(this, value);
+            return true;
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public List<String> getAdditionalAttributes() {
+        Set<String> core = Arrays.stream(Item.class.getDeclaredFields())
+                .map(Field::getName)
+                .collect(Collectors.toSet());
+
+        List<String> extras = new ArrayList<>();
+        for (Class<?> clazz = getClass(); clazz != null && clazz != Item.class; clazz = clazz.getSuperclass()) {
+            for (Field field : clazz.getDeclaredFields()) {
+                int modifiers = field.getModifiers();
+                if (Modifier.isStatic(modifiers) || Modifier.isTransient(modifiers) || core.contains(field.getName())) {
+                    continue;
+                }
+                extras.add(field.getName());
+            }
+        }
+        return extras;
+    }
+
+    public Map<String, Object> getMap(){
+        Map<String, Object> map = new HashMap<>();
+        if (this.getId() != null) {
+            map.put("_id", this.getId().toHexString());
+        }
+        map.put("name", this.getName());
+        map.put("type", this.getType());
+        map.put("subType", this.getSubType());
+        map.put("rarity", this.getRarity());
+        map.put("description", this.getDescription());
+
+        List<String> additionalAttributes = getAdditionalAttributes();
+        for (String additionalAttribute : additionalAttributes) {
+            map.put(additionalAttribute, this.getInt(additionalAttribute));
+        }
+        return map;
     }
 }
