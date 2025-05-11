@@ -119,6 +119,16 @@ public class DynamicClassGenerator {
         return classes;
     }
 
+    public static Class<?> getClassByName(String className) {
+        if (className == null) return null;
+        for (Map.Entry<String, Class<?>> entry : classes.entrySet()) {
+            if (entry.getKey().equalsIgnoreCase(className)) {
+                return entry.getValue();
+            }
+        }
+        return null;
+    }
+
     private static CtClass inferCtClass(Object value) throws NotFoundException {
         ClassPool pool = ClassPool.getDefault();
         if(value instanceof Integer) return CtClass.intType;

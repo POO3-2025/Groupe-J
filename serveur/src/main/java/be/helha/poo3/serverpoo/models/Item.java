@@ -7,10 +7,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class Item {
@@ -156,5 +153,23 @@ public class Item {
             }
         }
         return extras;
+    }
+
+    public Map<String, Object> getMap(){
+        Map<String, Object> map = new HashMap<>();
+        if (this.getId() != null) {
+            map.put("_id", this.getId().toHexString());
+        }
+        map.put("name", this.getName());
+        map.put("type", this.getType());
+        map.put("subType", this.getSubType());
+        map.put("rarity", this.getRarity());
+        map.put("description", this.getDescription());
+
+        List<String> additionalAttributes = getAdditionalAttributes();
+        for (String additionalAttribute : additionalAttributes) {
+            map.put(additionalAttribute, this.getInt(additionalAttribute));
+        }
+        return map;
     }
 }
