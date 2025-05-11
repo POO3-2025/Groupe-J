@@ -14,6 +14,7 @@ public class Users {
      */
     private String role;
     private boolean activated;
+    private int idIdLastCharacter;
 
     public int getId_user() {
         return id_user;
@@ -55,6 +56,14 @@ public class Users {
         this.activated = activated;
     }
 
+    public int getIdLastCharacter() {
+        return idIdLastCharacter;
+    }
+
+    public void setIdLastCharacter(int idIdLastCharacter) {
+        this.idIdLastCharacter = idIdLastCharacter;
+    }
+
     /**
      * Constructeur de la classe Users.
      *
@@ -64,11 +73,12 @@ public class Users {
      * @param role      le rôle de l'utilisateur
      * @param activated le statut d'activation de l'utilisateur
      */
-    public Users(int id_user, String username, String password, String role, boolean activated) {
+    public Users(int id_user, String username, String password, String role, boolean activated, int idIdLastCharacter) {
         this.id_user = id_user;
         this.username = username;
         this.password = password;
         this.role = role;
         this.activated = activated;
+        this.idIdLastCharacter = idIdLastCharacter;
     }
 }
