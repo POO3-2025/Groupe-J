@@ -3,6 +3,16 @@ package be.helha.poo3.serverpoo.models;
 import org.bson.types.ObjectId;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 public class Item {
     @JsonProperty("_id")
     protected ObjectId id;
@@ -99,5 +109,52 @@ public class Item {
                 ", rarity=" + rarity + '\'' +
                 ", description='" + description +
                 '}';
+    }
+    /*Test de getter et setter dynamique servant aux classes enfants*/
+    public int getInt(String field) {
+        try {
+            String getterName = "get" + Character.toUpperCase(field.charAt(0)) + field.substring(1);
+            Method getter;
+            getter = this.getClass().getMethod(getterName);
+            Object result = getter.invoke(this);
+            return result instanceof Integer ? (Integer) result : null;
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+
+    public boolean setInt(String field, int value) {
+        String setterName = "set" + Character.toUpperCase(field.charAt(0)) + field.substring(1);
+        try {
+            Method setter;
+            try {
+                setter = this.getClass().getMethod(setterName, int.class);
+            } catch (NoSuchMethodException ex) {
+                setter = this.getClass().getMethod(setterName, Integer.class);
+            }
+            setter.invoke(this, value);
+            return true;
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public List<String> getAdditionalAttributes() {
+        Set<String> core = Arrays.stream(Item.class.getDeclaredFields())
+                .map(Field::getName)
+                .collect(Collectors.toSet());
+
+        List<String> extras = new ArrayList<>();
+        for (Class<?> clazz = getClass(); clazz != null && clazz != Item.class; clazz = clazz.getSuperclass()) {
+            for (Field field : clazz.getDeclaredFields()) {
+                int modifiers = field.getModifiers();
+                if (Modifier.isStatic(modifiers) || Modifier.isTransient(modifiers) || core.contains(field.getName())) {
+                    continue;
+                }
+                extras.add(field.getName());
+            }
+        }
+        return extras;
     }
 }
