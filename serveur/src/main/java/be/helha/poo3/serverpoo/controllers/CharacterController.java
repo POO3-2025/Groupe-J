@@ -55,5 +55,32 @@ public class CharacterController {
 
     }
 
+    @PutMapping(path="/{id}")
+    public ResponseEntity<?> changeCharacterName(
+            @PathVariable int id,
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @RequestBody String name) {
+        if (authHeader == null || authHeader.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Authorization header is missing");
+        }
+        String token = authHeader.startsWith("Bearer ") ? authHeader.substring(7) : authHeader;
 
+        try {
+            int tokenUserId = jwtUtils.getUserIdFromToken(token);
+            if (characterService.userOwnsCharacter(tokenUserId,id)){
+                characterService.updateCharacterName(id,name);
+                return ResponseEntity.ok("Changement de nom effectué avec succès");
+            } else {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Vous ne possédé pas se personnage");
+            }
+
+        } catch (JwtException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token invalide : " + e.getMessage());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+        catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erreur lors de la mise à jour : " + e.getMessage());
+        }
+    }
 }

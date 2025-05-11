@@ -6,7 +6,8 @@
   "Type": "Sword",
   "Damage": 50,
   "Rarity": "common",
-  "Description": "A simple sword"
+  "Description": "A simple sword",
+  "SubType": "Weapon"
 },
   {
     "_id": {
@@ -16,7 +17,8 @@
     "Type": "Shield",
     "Defense": 20,
     "Description": "A simple Shield",
-    "Rarity": "common"
+    "Rarity": "common",
+    "SubType": "Secondary equipement"
   },
   {
     "_id": {
@@ -26,7 +28,8 @@
     "Type": "Shield",
     "Defense": 30,
     "Description": "A more robust shield",
-    "Rarity": "uncommon"
+    "Rarity": "uncommon",
+    "SubType": "Secondary equipement"
   },
   {
     "_id": {
@@ -39,4 +42,15 @@
     "Rarity": "common",
     "Description": "A basic healing potion",
     "SubType": "Consumable"
+  },
+  {
+    "_id": {
+      "$oid": "67bf3fffd1cf422617632cca"
+    },
+    "Name": "Steel forged armor",
+    "Type": "Heavy",
+    "Defense": 50,
+    "Description": "A good manufacturing forged armor",
+    "Rarity": "rare",
+    "SubType": "Armor"
   }]

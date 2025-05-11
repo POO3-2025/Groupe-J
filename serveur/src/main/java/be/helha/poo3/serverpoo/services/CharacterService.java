@@ -57,7 +57,7 @@ public class CharacterService {
     }
 
     public GameCharacter addCharacter(GameCharacter character) {
-        if (characterExists(character.getName())) {
+        if (characterExistsByName(character.getName())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Le nom est déjà utilisé");
         }
 
@@ -92,7 +92,50 @@ public class CharacterService {
         return character;
     }
 
-    public boolean characterExists(String name) {
+    public Boolean updateCharacterName(int id, String name) throws IllegalArgumentException {
+        if(characterExistsByName(name)) throw new IllegalArgumentException("Le nom est déjà utilisé");
+        String sql = "UPDATE `character` SET name = ? WHERE idCharacter = ?";
+        try(Connection conn = dataSource.getConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql)){
+            stmt.setString(1, name);
+            stmt.setInt(2, id);
+            int rows = stmt.executeUpdate();          // <‑‑ executeUpdate ici
+            return rows > 0;
+        } catch (SQLException e) {
+            throw new RuntimeException("Erreur lors du changement de nom \""+ name +"\": "+ e.getMessage(), e);
+        }
+    }
+
+    public void deleteCharacterById(int id) {
+        String sql = "DELETE FROM `character` WHERE idCharacter = ?";
+        try(Connection conn = dataSource.getConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql)){
+            stmt.setInt(1, id);
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Erreur lors de la vérification du personnage", e);
+        }
+    }
+
+    public boolean userOwnsCharacter(int userId, int characterId) {
+        String sql = "SELECT COUNT(*) FROM `character` WHERE idCharacter = ? AND idUser = ?";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, characterId);
+            stmt.setInt(2, userId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1) > 0;
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Erreur lors de la vérification du personnage", e);
+        }
+        return false;
+    }
+
+
+    public boolean characterExistsByName(String name) {
         String sql = "SELECT COUNT(*) FROM `character` WHERE name = ?";
         try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -103,9 +146,24 @@ public class CharacterService {
                 }
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Erreur lors de la vérification du nom d'utilisateur", e);
+            throw new RuntimeException("Erreur lors de la vérification du nom du personnage", e);
         }
         return false;
+    }
 
+    public boolean characterExistsById(int id) {
+        String sql = "SELECT COUNT(*) FROM `character` WHERE idCharacter = ?";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, id);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1) > 0;
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Erreur lors de la vérification du personnage", e);
+        }
+        return false;
     }
 }
