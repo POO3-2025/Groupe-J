@@ -2,7 +2,7 @@ package be.helha.poo3.serverpoo.models;
 
 import java.awt.*;
 
-public class CharacterWithPos extends Character {
+public class CharacterWithPos extends GameCharacter {
     private Point position;
 
     public Point getPosition() {

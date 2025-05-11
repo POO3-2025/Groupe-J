@@ -1,0 +1,111 @@
+package be.helha.poo3.serverpoo.services;
+
+
+import be.helha.poo3.serverpoo.models.GameCharacter;
+import be.helha.poo3.serverpoo.models.Inventory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Primary;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+
+import javax.sql.DataSource;
+import java.sql.*;
+import java.util.List;
+
+@Primary
+@Service
+public class CharacterService {
+
+    @Autowired
+    private DataSource dataSource;
+
+    @Autowired
+    private InventoryService inventoryService;
+
+    private List<Character> loadedCharacters;
+
+
+    public GameCharacter getCharacterById(int id) {
+        String sql = "SELECT * FROM `character` WHERE idCharacter = ?";
+
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, id);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return new GameCharacter(
+                            rs.getInt("idCharacter"),
+                            rs.getInt("idUser"),
+                            rs.getString("name"),
+                            rs.getString("inventoryId"),
+                            rs.getInt("maxHP"),
+                            rs.getInt("currentHP"),
+                            rs.getInt("constitution"),
+                            rs.getInt("dexterity"),
+                            rs.getInt("strength")
+                    );
+                } else {
+                    throw new IllegalArgumentException("No character with id " + id + " found");
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Erreur lors de la récupération de l'utilisateur : ", e);
+        }
+    }
+
+    public GameCharacter addCharacter(GameCharacter character) {
+        if (characterExists(character.getName())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Le nom est déjà utilisé");
+        }
+
+        Inventory inventory = inventoryService.createInventory();
+        character.setInventoryId(inventory.getId().toString());
+
+        String sql = "INSERT INTO `character` (idUser, name, inventoryId, maxHP, currentHP, constitution, dexterity, strength) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+
+
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+
+            stmt.setInt(1, character.getIdUser());
+            stmt.setString(2, character.getName());
+            stmt.setString(3, character.getInventoryId());
+            stmt.setInt(4, character.getMaxHP());
+            stmt.setInt(5, character.getCurrentHP());
+            stmt.setInt(6, character.getConstitution());
+            stmt.setInt(7, character.getDexterity());
+            stmt.setInt(8, character.getStrength());
+            stmt.executeUpdate();
+
+            try (ResultSet rs = stmt.getGeneratedKeys()) {
+                if (rs.next()) {
+                    character.setIdCharacter(rs.getInt(1));
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Erreur lors de l'insertion du personnage : "+e.getMessage(), e);
+        }
+
+        return character;
+    }
+
+    public boolean characterExists(String name) {
+        String sql = "SELECT COUNT(*) FROM `character` WHERE name = ?";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, name);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1) > 0;
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Erreur lors de la vérification du nom d'utilisateur", e);
+        }
+        return false;
+
+    }
+}

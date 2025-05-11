@@ -1,10 +1,12 @@
 package be.helha.poo3.serverpoo.models;
 
+import com.google.gson.annotations.SerializedName;
 import org.bson.types.ObjectId;
 import java.util.ArrayList;
 import java.util.List;
 
 public class Inventory {
+    @SerializedName("_id")
     private ObjectId id;
     private List<Item> items;
 
