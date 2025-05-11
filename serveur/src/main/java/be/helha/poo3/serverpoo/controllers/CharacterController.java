@@ -28,6 +28,22 @@ public class CharacterController {
         return characterService.getCharacterById(id);
     }
 
+    @GetMapping(path = "/myCharacters")
+    public ResponseEntity<?> getMyCharacters(@RequestHeader(value = "Authorization", required = false) String authHeader) {
+        if (authHeader == null || authHeader.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Authorization header is missing");
+        }
+        String token = authHeader.startsWith("Bearer ") ? authHeader.substring(7) : authHeader;
+        try {
+            int tokenUserId = jwtUtils.getUserIdFromToken(token);
+            return ResponseEntity.ok(characterService.getCharacters(tokenUserId));
+        } catch (JwtException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token invalide : " + e.getMessage());
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erreur lors de la mise à jour : " + e.getMessage());
+        }
+    }
+
     @PostMapping
     public ResponseEntity<?> addCharacter(
             @RequestHeader(value = "Authorization", required = false) String authHeader,

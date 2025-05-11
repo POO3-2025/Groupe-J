@@ -1,8 +1,10 @@
 package be.helha.poo3.serverpoo.services;
 
 
+import be.helha.poo3.serverpoo.models.CharacterWithPos;
 import be.helha.poo3.serverpoo.models.GameCharacter;
 import be.helha.poo3.serverpoo.models.Inventory;
+import be.helha.poo3.serverpoo.models.Users;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Primary;
 import org.springframework.http.HttpStatus;
@@ -11,6 +13,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import javax.sql.DataSource;
 import java.sql.*;
+import java.util.ArrayList;
 import java.util.List;
 
 @Primary
@@ -23,7 +26,37 @@ public class CharacterService {
     @Autowired
     private InventoryService inventoryService;
 
-    private List<Character> loadedCharacters;
+    private List<CharacterWithPos> loadedCharacters;
+
+    public List<GameCharacter> getCharacters(int userId) {
+        String sql = "SELECT * FROM `character` WHERE idUser = ?";
+
+        List<GameCharacter> GameCharacterList = new ArrayList<>();
+
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, userId);
+            ResultSet rs = stmt.executeQuery();
+
+            while (rs.next()) {
+                GameCharacter character = new GameCharacter(
+                        rs.getInt("idCharacter"),
+                        rs.getInt("idUser"),
+                        rs.getString("name"),
+                        rs.getString("inventoryId"),
+                        rs.getInt("maxHP"),
+                        rs.getInt("currentHP"),
+                        rs.getInt("constitution"),
+                        rs.getInt("dexterity"),
+                        rs.getInt("strength")
+                );
+                GameCharacterList.add(character);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Erreur lors de la récupération des personnages : "+e.getMessage(), e);
+        }
+        return GameCharacterList;
+    }
 
 
     public GameCharacter getCharacterById(int id) {
@@ -52,7 +85,7 @@ public class CharacterService {
                 }
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Erreur lors de la récupération de l'utilisateur : ", e);
+            throw new RuntimeException("Erreur lors de la récupération du personnage : ", e);
         }
     }
 
