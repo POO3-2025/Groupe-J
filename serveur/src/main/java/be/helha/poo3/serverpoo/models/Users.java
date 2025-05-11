@@ -14,7 +14,7 @@ public class Users {
      */
     private String role;
     private boolean activated;
-    private int idIdLastCharacter;
+    private int idLastCharacter;
 
     public int getId_user() {
         return id_user;
@@ -57,11 +57,11 @@ public class Users {
     }
 
     public int getIdLastCharacter() {
-        return idIdLastCharacter;
+        return idLastCharacter;
     }
 
     public void setIdLastCharacter(int idIdLastCharacter) {
-        this.idIdLastCharacter = idIdLastCharacter;
+        this.idLastCharacter = idIdLastCharacter;
     }
 
     /**
@@ -73,12 +73,12 @@ public class Users {
      * @param role      le rôle de l'utilisateur
      * @param activated le statut d'activation de l'utilisateur
      */
-    public Users(int id_user, String username, String password, String role, boolean activated, int idIdLastCharacter) {
+    public Users(int id_user, String username, String password, String role, boolean activated, int idLastCharacter) {
         this.id_user = id_user;
         this.username = username;
         this.password = password;
         this.role = role;
         this.activated = activated;
-        this.idIdLastCharacter = idIdLastCharacter;
+        this.idLastCharacter = idLastCharacter;
     }
 }

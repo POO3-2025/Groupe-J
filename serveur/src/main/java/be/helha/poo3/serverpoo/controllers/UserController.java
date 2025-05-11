@@ -130,6 +130,31 @@ public class UserController {
         }
     }
 
+    @PutMapping(path="/lastchar/{id}")
+    public ResponseEntity<?> changeLastChar(
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @PathVariable int id
+    ) {
+        if (authHeader == null || authHeader.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Authorization header is missing");
+        }
+
+        String token = authHeader.startsWith("Bearer ") ? authHeader.substring(7) : authHeader;
+
+        try {
+            int tokenUserId = jwtUtils.getUserIdFromToken(token);
+
+            userService.updateLastCharacter(tokenUserId, id);
+            Users updatedUser = userService.getUserById(id);
+            return ResponseEntity.ok(updatedUser);
+
+        } catch (JwtException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token invalide : " + e.getMessage());
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erreur lors de la mise à jour : " + e.getMessage());
+        }
+    }
+
     @GetMapping("/exists/{username}")
     public boolean userExists(@PathVariable String username) {
         return userService.userExists(username);
