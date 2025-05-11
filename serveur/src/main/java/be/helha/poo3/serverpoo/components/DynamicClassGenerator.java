@@ -25,7 +25,7 @@ public class DynamicClassGenerator {
     }
 
     public void generate() {
-        MongoCollection<Document> collection = connexionMongoDB.getCollection();
+        MongoCollection<Document> collection = connexionMongoDB.getCollection("Items");
         try (MongoCursor<Document> cursor = collection.find().iterator()) {
             ObjectMapper mapper = new ObjectMapper();
             Map<String,Document> documents = new HashMap<>();

@@ -4,8 +4,6 @@ import be.helha.poo3.serverpoo.configuration.MongoConfig;
 import com.mongodb.client.*;
 import jakarta.annotation.PostConstruct;
 import org.bson.Document;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -27,8 +25,8 @@ public class ConnexionMongoDB {
         System.out.println("Connected to " + config.getDb() + "/" + config.getCollection());
     }
 
-    public MongoCollection<Document> getCollection() {
-        return collection;
+    public MongoCollection<Document> getCollection(String name) {
+        return mongoClient.getDatabase(config.getDb()).getCollection(name);
     }
 }
 

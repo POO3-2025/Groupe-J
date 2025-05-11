@@ -2,6 +2,7 @@ package be.helha.poo3.serverpoo.services;
 
 import be.helha.poo3.serverpoo.models.Users;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Primary;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -23,6 +24,7 @@ import java.util.List;
  * Cette classe implémente l'interface {@link UserDetailsService} de Spring Security
  * pour charger les informations d'un utilisateur depuis la base de données.
  */
+@Primary
 @Service
 public class UserService implements UserDetailsService {
 
