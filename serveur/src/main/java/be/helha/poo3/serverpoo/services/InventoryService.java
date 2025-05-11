@@ -1,6 +1,7 @@
 package be.helha.poo3.serverpoo.services;
 
 import be.helha.poo3.serverpoo.components.ConnexionMongoDB;
+import be.helha.poo3.serverpoo.components.DynamicClassGenerator;
 import be.helha.poo3.serverpoo.models.Inventory;
 import be.helha.poo3.serverpoo.models.Item;
 import be.helha.poo3.serverpoo.utils.GsonObjectIdAdapted;
@@ -15,7 +16,9 @@ import org.bson.types.ObjectId;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 @Primary
@@ -26,12 +29,14 @@ public class InventoryService {
     private final MongoCollection<Document> inventoryCollection;
     private final Gson gson;
     private final ItemLoaderService itemLoaderService;
+    private final DynamicClassGenerator dynamicClassGenerator;
 
-    public InventoryService(ConnexionMongoDB connexionMongoDB, ItemLoaderService itemLoaderService) {
+    public InventoryService(ConnexionMongoDB connexionMongoDB, ItemLoaderService itemLoaderService, DynamicClassGenerator dynamicClassGenerator) {
         this.connexionMongoDB = connexionMongoDB;
         this.inventoryCollection = connexionMongoDB.getCollection("Inventories");
         this.gson = GsonObjectIdAdapted.getGson();
         this.itemLoaderService = itemLoaderService;
+        this.dynamicClassGenerator = dynamicClassGenerator;
     }
 
     public Inventory createInventory() {
@@ -50,14 +55,33 @@ public class InventoryService {
 
     public Inventory getInventory(ObjectId id) {
         Document doc = inventoryCollection.find(Filters.eq("_id", id)).first();
-        if (doc != null) {
-            Gson gson = new GsonBuilder()
-                    .registerTypeAdapter(ObjectId.class, new ObjectIdAdapter())
-                    .create();
-            return gson.fromJson(doc.toJson(), Inventory.class);  // conversion JSON -> Inventory
+        if (doc == null) return null;
+
+        Gson gson = GsonObjectIdAdapted.getGson();
+        Inventory inventory = gson.fromJson(doc.toJson(), Inventory.class);
+
+        // reconstruire dynamiquement chaque item
+        List<Item> realItems = new ArrayList<>();
+        List<Document> itemDocs = (List<Document>) doc.get("items");
+
+        for (Document itemDoc : itemDocs) {
+            String type = itemDoc.getString("type");
+            Class<?> clazz = DynamicClassGenerator.getClassByName(type);
+
+            if (clazz != null) {
+                Object itemObj = gson.fromJson(itemDoc.toJson(), clazz);
+                if (itemObj instanceof Item item) {
+                    realItems.add(item);
+                }
+            } else {
+                realItems.add(gson.fromJson(itemDoc.toJson(), Item.class));
+            }
         }
-        return null;
+
+        inventory.setItems(realItems);
+        return inventory;
     }
+
 
     public List<Item> getItems(ObjectId inventoryId) {
         Inventory inventory = getInventory(inventoryId);
@@ -65,22 +89,22 @@ public class InventoryService {
     }
 
     public void addItemToInventory(ObjectId inventoryId, ObjectId itemId) {
-        // Chercher l'item chargé en mémoire
-        Item originalItem = itemLoaderService.getLoadedItems().stream()
+        // trouver l’item d’origine via l’ItemLoaderService
+        Item original = itemLoaderService.getLoadedItems().stream()
                 .filter(i -> itemId.equals(i.getId()))
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("Aucun item trouvé avec l'identifiant : " + itemId));
 
-        // Cloner l'item en JSON puis le désérialiser
-        String json = gson.toJson(originalItem);
-        Item clonedItem = gson.fromJson(json, originalItem.getClass());
+        // cloner dynamiquement
+        Item clone = cloneItem(original);
 
-        // Générer un nouvel ID
-        clonedItem.setId(new ObjectId());
+        // générer un nouvel ID pour l’item cloné
+        clone.setId(new ObjectId());
 
-        // Ajouter dans Mongo
-        Document itemDoc = Document.parse(gson.toJson(clonedItem));
+        // convertir en Document pour MongoDB
+        Document itemDoc = Document.parse(gson.toJson(clone));
 
+        // ajouter dans l’inventaire
         inventoryCollection.updateOne(
                 Filters.eq("_id", inventoryId),
                 Updates.push("items", itemDoc)
@@ -88,37 +112,141 @@ public class InventoryService {
     }
 
     public boolean removeItemFromInventory(ObjectId inventoryId, ObjectId itemId) {
-        // Récupérer l'inventaire
+        // récupérer le document de l'inventaire
         Document inventoryDoc = inventoryCollection.find(Filters.eq("_id", inventoryId)).first();
         if (inventoryDoc == null) return false;
 
+        Gson gson = GsonObjectIdAdapted.getGson();
         Inventory inventory = gson.fromJson(inventoryDoc.toJson(), Inventory.class);
-        List<Item> items = inventory.getItems();
 
-        if (items == null || items.isEmpty()) return false;
+        // désérialiser correctement les items dynamiques
+        List<Item> realItems = new ArrayList<>();
+        List<Document> itemDocs = (List<Document>) inventoryDoc.get("items");
 
-        // Supprimer le premier item ayant l’ID demandé
-        boolean removed = false;
-        for (int i = 0; i < items.size(); i++) {
-            if (itemId.equals(items.get(i).getId())) {
-                items.remove(i);
-                removed = true;
-                break;
-            }
+        for (Document itemDoc : itemDocs) {
+            String type = itemDoc.getString("type");
+            Class<?> clazz = DynamicClassGenerator.getClassByName(type);
+
+            Item item = clazz != null
+                    ? (Item) gson.fromJson(itemDoc.toJson(), clazz)
+                    : gson.fromJson(itemDoc.toJson(), Item.class);
+
+            realItems.add(item);
         }
+
+        // supprimer un seul item par son _id
+        boolean removed = realItems.removeIf(item -> itemId.equals(item.getId()));
 
         if (!removed) return false;
 
-        // Reconstruire la liste en Documents
-        List<Document> updatedItems = new ArrayList<>();
-        for (Item item : items) {
-            updatedItems.add(Document.parse(gson.toJson(item)));
+        // convertir les items restants en Documents
+        List<Document> updatedItemDocs = new ArrayList<>();
+        for (Item item : realItems) {
+            updatedItemDocs.add(Document.parse(gson.toJson(item)));
         }
 
-        // Mise à jour de la base
+        // màj dans la base
         inventoryCollection.updateOne(
                 Filters.eq("_id", inventoryId),
-                Updates.set("items", updatedItems)
+                Updates.set("items", updatedItemDocs)
+        );
+
+        return true;
+    }
+
+
+    /**
+     * Crée un clone indépendant de l'Item passé en paramètre.
+     * Compatible avec toutes les classes d'items générées dynamiquement.
+     *
+     * @param original l'instance d'origine à cloner
+     * @return une nouvelle instance de la même classe, avec les mêmes valeurs
+     */
+    public static Item cloneItem(Item original) {
+        if (original == null) return null;
+
+        try {
+            // nouvelle instance de la même classe
+            Class<?> clazz = original.getClass();
+            Item copy = (Item) clazz.getDeclaredConstructor().newInstance();
+
+            // copier les champs déclarés dans Item
+            copy.setId(original.getId());
+            copy.setName(original.getName());
+            copy.setType(original.getType());
+            copy.setSubType(original.getSubType());
+            copy.setRarity(original.getRarity());
+            copy.setDescription(original.getDescription());
+
+            for (String attr : original.getAdditionalAttributes()) {
+                int val = original.getInt(attr);
+                copy.setInt(attr, val);
+            }
+
+            return copy;
+        } catch (Exception e) {
+            throw new RuntimeException("Impossible de cloner l'item: " + e.getMessage(), e);
+        }
+    }
+
+    public boolean consumeItem(ObjectId inventoryId, ObjectId itemId) {
+        Document inventoryDoc = inventoryCollection.find(Filters.eq("_id", inventoryId)).first();
+        if (inventoryDoc == null) return false;
+
+        Gson gson = GsonObjectIdAdapted.getGson();
+        Inventory inventory = gson.fromJson(inventoryDoc.toJson(), Inventory.class);
+
+        List<Document> itemDocs = (List<Document>) inventoryDoc.get("items");
+        List<Item> realItems = new ArrayList<>();
+
+        for (Document itemDoc : itemDocs) {
+            String type = itemDoc.getString("type");
+            Class<?> clazz = DynamicClassGenerator.getClassByName(type);
+            Item item = clazz != null
+                    ? (Item) gson.fromJson(itemDoc.toJson(), clazz)
+                    : gson.fromJson(itemDoc.toJson(), Item.class);
+            realItems.add(item);
+        }
+
+        boolean updated = false;
+        Iterator<Item> iterator = realItems.iterator();
+
+        while (iterator.hasNext()) {
+            Item item = iterator.next();
+            if (itemId.equals(item.getId())) {
+                try {
+                    Field field = item.getClass().getDeclaredField("currentCapacity");
+                    field.setAccessible(true);
+
+                    int value = (int) field.get(item);
+
+                    if (value > 1) {
+                        field.set(item, value - 1);
+                    } else {
+                        iterator.remove();
+                    }
+
+                    updated = true;
+                    break;
+
+                } catch (NoSuchFieldException e) {
+                    throw new RuntimeException("Cet objet n’est pas consommable (champ currentCapacity absent).");
+                } catch (Exception e) {
+                    throw new RuntimeException("Erreur lors de la consommation de l’objet", e);
+                }
+            }
+        }
+
+        if (!updated) return false;
+
+        List<Document> updatedDocs = new ArrayList<>();
+        for (Item item : realItems) {
+            updatedDocs.add(Document.parse(gson.toJson(item)));
+        }
+
+        inventoryCollection.updateOne(
+                Filters.eq("_id", inventoryId),
+                Updates.set("items", updatedDocs)
         );
 
         return true;

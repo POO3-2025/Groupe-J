@@ -110,7 +110,7 @@ public class Item {
     /*Test de getter et setter dynamique servant aux classes enfants*/
     public int getInt(String field) {
         try {
-            String getterName = "get" + Character.toUpperCase(field.charAt(0)) + field.substring(1);
+            String getterName = "get" + java.lang.Character.toUpperCase(field.charAt(0)) + field.substring(1);
             Method getter;
             getter = this.getClass().getMethod(getterName);
             Object result = getter.invoke(this);
@@ -122,7 +122,7 @@ public class Item {
     }
 
     public boolean setInt(String field, int value) {
-        String setterName = "set" + Character.toUpperCase(field.charAt(0)) + field.substring(1);
+        String setterName = "set" + java.lang.Character.toUpperCase(field.charAt(0)) + field.substring(1);
         try {
             Method setter;
             try {

@@ -1,11 +1,11 @@
 package be.helha.poo3.serverpoo.controllers;
 
 import be.helha.poo3.serverpoo.models.Inventory;
+import be.helha.poo3.serverpoo.models.InventoryDTO;
 import be.helha.poo3.serverpoo.models.Item;
 import be.helha.poo3.serverpoo.services.InventoryService;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -36,20 +36,24 @@ public class InventoryController {
      * Récupère un inventaire par son ID MongoDB.
      */
     @GetMapping("/{id}")
-    public ResponseEntity<?> getInventory(@PathVariable String id) {
-        try {
-            ObjectId objectId = new ObjectId(id); // Peut lancer IllegalArgumentException
-            Inventory inventory = inventoryService.getInventory(objectId);
-            if (inventory != null) {
-                return ResponseEntity.ok(inventory);
-            } else {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Inventaire introuvable.");
-            }
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("ID invalide : " + e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erreur serveur : " + e.getMessage());
+    public ResponseEntity<InventoryDTO> getInventory(@PathVariable String id) {
+        if (!ObjectId.isValid(id)) {
+            return ResponseEntity
+                    .badRequest()
+                    .build();
         }
+
+        ObjectId objectId = new ObjectId(id);
+        Inventory inventory = inventoryService.getInventory(objectId);
+
+        if (inventory == null) {
+            return ResponseEntity
+                    .notFound()
+                    .build();
+        }
+
+        InventoryDTO dto = new InventoryDTO(inventory);
+        return ResponseEntity.ok(dto);
     }
 
     /**
@@ -121,5 +125,51 @@ public class InventoryController {
         }
 
         return ResponseEntity.ok().build();
+    }
+
+    /**
+     * Consomme un item de l'inventaire donné.
+     * Si l'item est un consommable (possède un champ 'currentCapacity'), décrémente sa capacité.
+     * Supprime automatiquement l'item s'il ne reste plus d'utilisations.
+     *
+     * @param inventoryId l'identifiant de l'inventaire
+     * @param itemId l'identifiant de l'item à consommer
+     * @return true si l'item a été consommé ou supprimé, false s'il n'a pas été trouvé
+     *
+     * @throws RuntimeException si l'item n'est pas un consommable
+     *
+     * /!\ Méthode générée et adaptée par une IA (ChatGPT)
+     */
+
+    @PatchMapping("/{inventoryId}/items/{itemId}/consume")
+    public ResponseEntity<String> consumeItem(
+            @PathVariable String inventoryId,
+            @PathVariable String itemId) {
+
+        if (!ObjectId.isValid(inventoryId) || !ObjectId.isValid(itemId)) {
+            return ResponseEntity
+                    .badRequest()
+                    .body("{\"erreur\": \"ID invalide.\"}");
+        }
+
+        try {
+            boolean success = inventoryService.consumeItem(
+                    new ObjectId(inventoryId),
+                    new ObjectId(itemId)
+            );
+
+            if (!success) {
+                return ResponseEntity
+                        .status(404)
+                        .body("{\"erreur\": \"Objet non trouvé dans l’inventaire.\"}");
+            }
+
+            return ResponseEntity.ok("{\"message\": \"Objet consommé.\"}");
+
+        } catch (RuntimeException e) {
+            return ResponseEntity
+                    .badRequest()
+                    .body("{\"erreur\": \"" + e.getMessage() + "\"}");
+        }
     }
 }

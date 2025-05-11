@@ -8,7 +8,7 @@ public class Inventory {
     private ObjectId id;
     private List<Item> items;
 
-    //private Item armortSlot;
+    //private Item armorSlot;
     //private Item mainSlot;
     //private Item secondSlot;
 
