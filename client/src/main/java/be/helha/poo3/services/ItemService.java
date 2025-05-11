@@ -73,11 +73,11 @@ public class ItemService {
                         || key.equals("subType") || key.equals("rarity") || key.equals("description")) {
                     continue;
                 }
-                try {
-                    var field = clazz.getDeclaredField(key);
-                    field.setAccessible(true);
-                    field.set(item, entry.getValue());
-                } catch (NoSuchFieldException ignored) {
+                Object val = entry.getValue();
+                if (val instanceof Number n) {                          // JSON -> nombre
+                    item.setInt(key, n.intValue());
+                } else if (val instanceof String s && !s.isBlank()) {   // JSON -> chaîne
+                    item.setInt(key, Integer.parseInt(s));
                 }
             }
 
