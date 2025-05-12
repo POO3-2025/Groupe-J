@@ -38,21 +38,18 @@ public class InventoryController {
     @GetMapping("/{id}")
     public ResponseEntity<InventoryDTO> getInventory(@PathVariable String id) {
         if (!ObjectId.isValid(id)) {
-            return ResponseEntity
-                    .badRequest()
-                    .build();
+            return ResponseEntity.badRequest().build();
         }
 
         ObjectId objectId = new ObjectId(id);
         Inventory inventory = inventoryService.getInventory(objectId);
 
         if (inventory == null) {
-            return ResponseEntity
-                    .notFound()
-                    .build();
+            return ResponseEntity.notFound().build();
         }
 
         InventoryDTO dto = new InventoryDTO(inventory);
+        System.out.println(dto);
         return ResponseEntity.ok(dto);
     }
 
@@ -66,22 +63,22 @@ public class InventoryController {
     }
 
     /**
-     * Ajoute un nouvel item à l'inventaire donné.
+     * Ajoute un nouvel item à l'inventaire donné à partir d'un item existant dans la base des modèles.
+     *
+     * @param inventoryId l'identifiant de l'inventaire ciblé
+     * @param payload contient un champ "itemId" qui référence l'item à cloner
+     * @return 200 OK si ajouté, 400 ou 404 avec message d'erreur sinon
      */
     @PostMapping("/{inventoryId}/items")
     public ResponseEntity<String> addItem(@PathVariable String inventoryId, @RequestBody Map<String, String> payload) {
         String rawItemId = payload.get("itemId");
 
         if (rawItemId == null || rawItemId.isBlank()) {
-            return ResponseEntity
-                    .badRequest()
-                    .body("{\"erreur\": \"Le champ 'itemId' est manquant ou vide dans la requête.\"}");
+            return ResponseEntity.badRequest().body("{\"erreur\": \"Le champ 'itemId' est manquant ou vide dans la requête.\"}");
         }
 
         if (!ObjectId.isValid(rawItemId)) {
-            return ResponseEntity
-                    .badRequest()
-                    .body("{\"erreur\": \"L'identifiant fourni n'est pas un ObjectId valide.\"}");
+            return ResponseEntity.badRequest().body("{\"erreur\": \"L'identifiant fourni n'est pas un ObjectId valide.\"}");
         }
 
         ObjectId invId = new ObjectId(inventoryId);
@@ -91,27 +88,25 @@ public class InventoryController {
             inventoryService.addItemToInventory(invId, itemId);
             return ResponseEntity.ok().build();
         } catch (RuntimeException e) {
-            return ResponseEntity
-                    .status(404)
-                    .body("{\"erreur\": \"" + e.getMessage() + "\"}");
+            return ResponseEntity.status(404).body("{\"erreur\": \"" + e.getMessage() + "\"}");
         }
     }
 
     /**
-     * Supprime un item de l'inventaire par son identifiant.
+     * Supprime un item d’un inventaire à partir de son identifiant.
+     *
+     * @param inventoryId l'identifiant de l'inventaire
+     * @param itemId l'identifiant de l'item à retirer
+     * @return 200 OK si supprimé, 404 si l'item n'existe pas, ou 400 si les identifiants sont invalides
      */
     @DeleteMapping("/{inventoryId}/items/{itemId}")
     public ResponseEntity<String> removeItem(@PathVariable String inventoryId, @PathVariable String itemId) {
         if (!ObjectId.isValid(inventoryId)) {
-            return ResponseEntity
-                    .badRequest()
-                    .body("{\"erreur\": \"L'identifiant d'inventaire est invalide.\"}");
+            return ResponseEntity.badRequest().body("{\"erreur\": \"L'identifiant d'inventaire est invalide.\"}");
         }
 
         if (!ObjectId.isValid(itemId)) {
-            return ResponseEntity
-                    .badRequest()
-                    .body("{\"erreur\": \"L'identifiant fourni n'est pas un ObjectId valide.\"}");
+            return ResponseEntity.badRequest().body("{\"erreur\": \"L'identifiant fourni n'est pas un ObjectId valide.\"}");
         }
 
         ObjectId invId = new ObjectId(inventoryId);
@@ -119,37 +114,27 @@ public class InventoryController {
 
         boolean removed = inventoryService.removeItemFromInventory(invId, itemObjId);
         if (!removed) {
-            return ResponseEntity
-                    .status(404)
-                    .body("{\"erreur\": \"Aucun item avec cet ID n’a été trouvé dans l’inventaire.\"}");
+            return ResponseEntity.status(404).body("{\"erreur\": \"Aucun item avec cet ID n’a été trouvé dans l’inventaire.\"}");
         }
 
         return ResponseEntity.ok().build();
     }
 
     /**
-     * Consomme un item de l'inventaire donné.
-     * Si l'item est un consommable (possède un champ 'currentCapacity'), décrémente sa capacité.
-     * Supprime automatiquement l'item s'il ne reste plus d'utilisations.
+     * Consomme un item de l'inventaire donné en décrémentant son champ "currentCapacity" s'il est présent.
+     * Supprime l'item s'il ne reste plus d'utilisation.
      *
      * @param inventoryId l'identifiant de l'inventaire
      * @param itemId l'identifiant de l'item à consommer
-     * @return true si l'item a été consommé ou supprimé, false s'il n'a pas été trouvé
-     *
-     * @throws RuntimeException si l'item n'est pas un consommable
-     *
-     * /!\ Méthode générée et adaptée par une IA (ChatGPT)
+     * @return 200 si consommé ou supprimé, 404 si l'objet est introuvable, 400 en cas d'erreur
      */
-
     @PatchMapping("/{inventoryId}/items/{itemId}/consume")
     public ResponseEntity<String> consumeItem(
             @PathVariable String inventoryId,
             @PathVariable String itemId) {
 
         if (!ObjectId.isValid(inventoryId) || !ObjectId.isValid(itemId)) {
-            return ResponseEntity
-                    .badRequest()
-                    .body("{\"erreur\": \"ID invalide.\"}");
+            return ResponseEntity.badRequest().body("{\"erreur\": \"ID invalide.\"}");
         }
 
         try {
@@ -159,17 +144,66 @@ public class InventoryController {
             );
 
             if (!success) {
-                return ResponseEntity
-                        .status(404)
-                        .body("{\"erreur\": \"Objet non trouvé dans l’inventaire.\"}");
+                return ResponseEntity.status(404).body("{\"erreur\": \"Objet non trouvé dans l’inventaire.\"}");
             }
 
             return ResponseEntity.ok("{\"message\": \"Objet consommé.\"}");
 
         } catch (RuntimeException e) {
-            return ResponseEntity
-                    .badRequest()
-                    .body("{\"erreur\": \"" + e.getMessage() + "\"}");
+            return ResponseEntity.badRequest().body("{\"erreur\": \"" + e.getMessage() + "\"}");
+        }
+    }
+
+    /**
+     * Équipe un item dans un des emplacements de l'inventaire (main, armor, second).
+     *
+     * @param inventoryId l'identifiant de l'inventaire
+     * @param slot le nom de l'emplacement ciblé (main, armor, second)
+     * @param item l'objet à équiper, provenant de l'inventaire
+     * @return 200 si l'équipement a réussi, 400 en cas d'erreur
+     */
+    @PostMapping("/{inventoryId}/equip/{slot}")
+    public ResponseEntity<String> pushToSlot(
+            @PathVariable String inventoryId,
+            @PathVariable String slot,
+            @RequestBody Item item) {
+
+        if (!ObjectId.isValid(inventoryId)) {
+            return ResponseEntity.badRequest().body("ID d'inventaire invalide.");
+        }
+
+        try {
+            inventoryService.pushToSlot(new ObjectId(inventoryId), slot, item);
+            return ResponseEntity.ok("Item équipé dans le slot " + slot);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Erreur : " + e.getMessage());
+        }
+    }
+
+    /**
+     * Retire un item d’un emplacement de l’inventaire et le remet dans la liste d’objets si possible.
+     * Si l’inventaire est plein et force est à true, l’item est supprimé.
+     *
+     * @param inventoryId l'identifiant de l'inventaire
+     * @param slot le nom de l'emplacement ciblé (main, armor, second)
+     * @param force true pour forcer la suppression si l'inventaire est plein
+     * @return 200 si l'item a été retiré, 400 en cas d'erreur
+     */
+    @PostMapping("/{inventoryId}/unequip/{slot}")
+    public ResponseEntity<String> pullFromSlot(
+            @PathVariable String inventoryId,
+            @PathVariable String slot,
+            @RequestParam(defaultValue = "false") boolean force) {
+
+        if (!ObjectId.isValid(inventoryId)) {
+            return ResponseEntity.badRequest().body("ID d'inventaire invalide.");
+        }
+
+        try {
+            inventoryService.pullFromSlot(new ObjectId(inventoryId), slot, force);
+            return ResponseEntity.ok("Item retiré du slot " + slot);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Erreur : " + e.getMessage());
         }
     }
 }

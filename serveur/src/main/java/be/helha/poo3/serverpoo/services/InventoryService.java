@@ -2,6 +2,7 @@ package be.helha.poo3.serverpoo.services;
 
 import be.helha.poo3.serverpoo.components.ConnexionMongoDB;
 import be.helha.poo3.serverpoo.components.DynamicClassGenerator;
+import be.helha.poo3.serverpoo.exceptions.InventoryIOException;
 import be.helha.poo3.serverpoo.models.Inventory;
 import be.helha.poo3.serverpoo.models.Item;
 import be.helha.poo3.serverpoo.utils.GsonObjectIdAdapted;
@@ -39,6 +40,12 @@ public class InventoryService {
         this.dynamicClassGenerator = dynamicClassGenerator;
     }
 
+    /**
+     * Crée un nouvel inventaire vide, le convertit en Document BSON
+     * et l'insère dans la collection MongoDB "Inventories".
+     *
+     * @return l'objet Inventory nouvellement créé, avec son identifiant MongoDB (_id) défini.
+     */
     public Inventory createInventory() {
         Inventory inventory = new Inventory();
         Gson gson = new GsonBuilder()
@@ -53,14 +60,23 @@ public class InventoryService {
         return inventory;
     }
 
+    /**
+     * Récupère un inventaire depuis la base MongoDB à partir de son identifiant.
+     * Les items de l'inventaire ainsi que les slots d'équipement (main, armor, second)
+     * sont reconstruits dynamiquement selon leur type pour restaurer leur classe spécifique.
+     *
+     * @param id l'identifiant MongoDB de l'inventaire à récupérer
+     * @return un objet Inventory entièrement reconstruit ou null si aucun inventaire n'a été trouvé
+     */
     public Inventory getInventory(ObjectId id) {
         Document doc = inventoryCollection.find(Filters.eq("_id", id)).first();
         if (doc == null) return null;
 
         Gson gson = GsonObjectIdAdapted.getGson();
         Inventory inventory = gson.fromJson(doc.toJson(), Inventory.class);
+        inventory.setId(id);
 
-        // reconstruire dynamiquement chaque item
+        // Reconstruction dynamique des items
         List<Item> realItems = new ArrayList<>();
         List<Document> itemDocs = (List<Document>) doc.get("items");
 
@@ -79,47 +95,77 @@ public class InventoryService {
         }
 
         inventory.setItems(realItems);
+
+        // Reconstruction dynamique des slots
+        inventory.setMainSlot(reconstructSlot((Document) doc.get("mainSlot"), gson));
+        inventory.setArmorSlot(reconstructSlot((Document) doc.get("armorSlot"), gson));
+        inventory.setSecondSlot(reconstructSlot((Document) doc.get("secondSlot"), gson));
+
         return inventory;
     }
 
-
+    /**
+     * Récupère la liste des items d'un inventaire à partir de son identifiant.
+     * Si aucun inventaire n'est trouvé, retourne une liste vide.
+     *
+     * @param inventoryId l'identifiant MongoDB de l'inventaire
+     * @return une liste d'objets Item contenus dans l'inventaire, ou une liste vide si l'inventaire est introuvable
+     */
     public List<Item> getItems(ObjectId inventoryId) {
         Inventory inventory = getInventory(inventoryId);
         return inventory != null ? inventory.getItems() : new ArrayList<>();
     }
 
+    /**
+     * Ajoute un nouvel item à un inventaire spécifié en le clonant à partir d'un modèle existant
+     * chargé par l'ItemLoaderService
+     * L'item cloné reçoit un nouvel identifiant avant d'être inséré dans la base MongoDB.
+     *
+     * @param inventoryId l'identifiant MongoDB de l'inventaire cible
+     * @param itemId l'identifiant de l'item modèle à cloner et ajouter
+     * @throws RuntimeException si aucun item avec l'identifiant donné n'est trouvé dans les modèles chargés
+     */
     public void addItemToInventory(ObjectId inventoryId, ObjectId itemId) {
-        // trouver l’item d’origine via l’ItemLoaderService
+        // Trouver l’item d’origine via l’ItemLoaderService
         Item original = itemLoaderService.getLoadedItems().stream()
                 .filter(i -> itemId.equals(i.getId()))
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("Aucun item trouvé avec l'identifiant : " + itemId));
 
-        // cloner dynamiquement
+        // Cloner dynamiquement
         Item clone = cloneItem(original);
 
-        // générer un nouvel ID pour l’item cloné
+        // Générer un nouvel ID pour l’item cloné
         clone.setId(new ObjectId());
 
-        // convertir en Document pour MongoDB
+        // Convertir en Document pour MongoDB
         Document itemDoc = Document.parse(gson.toJson(clone));
 
-        // ajouter dans l’inventaire
+        // Ajouter dans l’inventaire
         inventoryCollection.updateOne(
                 Filters.eq("_id", inventoryId),
                 Updates.push("items", itemDoc)
         );
     }
 
+    /**
+     * Supprime un item spécifique d'un inventaire MongoDB, en le recherchant par son identifiant.
+     * Les items de l'inventaire sont désérialisés dynamiquement selon leur type avant suppression.
+     * Si l'item est trouvé et supprimé, l'inventaire est mis à jour dans la base de données.
+     *
+     * @param inventoryId l'identifiant MongoDB de l'inventaire
+     * @param itemId l'identifiant de l'item à supprimer
+     * @return true si l'item a été trouvé et supprimé, false sinon
+     */
     public boolean removeItemFromInventory(ObjectId inventoryId, ObjectId itemId) {
-        // récupérer le document de l'inventaire
+        // Récupérer le document de l'inventaire
         Document inventoryDoc = inventoryCollection.find(Filters.eq("_id", inventoryId)).first();
         if (inventoryDoc == null) return false;
 
         Gson gson = GsonObjectIdAdapted.getGson();
         Inventory inventory = gson.fromJson(inventoryDoc.toJson(), Inventory.class);
 
-        // désérialiser correctement les items dynamiques
+        // Désérialiser correctement les items dynamiques
         List<Item> realItems = new ArrayList<>();
         List<Document> itemDocs = (List<Document>) inventoryDoc.get("items");
 
@@ -134,18 +180,18 @@ public class InventoryService {
             realItems.add(item);
         }
 
-        // supprimer un seul item par son _id
+        // Supprimer un seul item par son _id
         boolean removed = realItems.removeIf(item -> itemId.equals(item.getId()));
 
         if (!removed) return false;
 
-        // convertir les items restants en Documents
+        // Convertir les items restants en Documents
         List<Document> updatedItemDocs = new ArrayList<>();
         for (Item item : realItems) {
             updatedItemDocs.add(Document.parse(gson.toJson(item)));
         }
 
-        // màj dans la base
+        // MàJ dans la base
         inventoryCollection.updateOne(
                 Filters.eq("_id", inventoryId),
                 Updates.set("items", updatedItemDocs)
@@ -153,7 +199,6 @@ public class InventoryService {
 
         return true;
     }
-
 
     /**
      * Crée un clone indépendant de l'Item passé en paramètre.
@@ -166,11 +211,11 @@ public class InventoryService {
         if (original == null) return null;
 
         try {
-            // nouvelle instance de la même classe
+            // Nouvelle instance de la même classe
             Class<?> clazz = original.getClass();
             Item copy = (Item) clazz.getDeclaredConstructor().newInstance();
 
-            // copier les champs déclarés dans Item
+            // Copier les champs déclarés dans Item
             copy.setId(original.getId());
             copy.setName(original.getName());
             copy.setType(original.getType());
@@ -189,6 +234,16 @@ public class InventoryService {
         }
     }
 
+    /**
+     * Consomme un item dans un inventaire en décrémentant son champ "currentCapacity", s'il est présent.
+     * Si la capacité restante est de 1, l'item est supprimé de l'inventaire.
+     * L'item ciblé doit avoir un champ "currentCapacity" accessible et de type entier.
+     *
+     * @param inventoryId l'identifiant de l'inventaire MongoDB
+     * @param itemId l'identifiant de l'item à consommer
+     * @return true si l'item a été trouvé et mis à jour ou supprimé, false sinon
+     * @throws RuntimeException si le champ "currentCapacity" est absent ou inaccessible
+     */
     public boolean consumeItem(ObjectId inventoryId, ObjectId itemId) {
         Document inventoryDoc = inventoryCollection.find(Filters.eq("_id", inventoryId)).first();
         if (inventoryDoc == null) return false;
@@ -250,5 +305,89 @@ public class InventoryService {
         );
 
         return true;
+    }
+
+    /**
+     * Tente d'équiper un item d'un inventaire dans l'un des trois emplacements d'équipement (main, armor, second).
+     * L'item doit être présent dans l'inventaire et compatible avec le type d'emplacement.
+     * Si l'emplacement est déjà occupé, les deux items sont échangés.
+     *
+     * @param inventoryId l'identifiant de l'inventaire
+     * @param slot le nom de l'emplacement ciblé (main, armor ou second)
+     * @param item l'objet à équiper, provenant de l'inventaire
+     * @throws InventoryIOException si l'inventaire est introuvable, le slot invalide ou l'item non compatible
+     */
+    public void pushToSlot(ObjectId inventoryId, String slot, Item item) throws InventoryIOException {
+        Inventory inv = getInventory(inventoryId);
+        if (inv == null) throw new InventoryIOException("Inventaire introuvable", 2);
+
+        switch (slot.toLowerCase()) {
+            case "main" -> inv.pushToMainSlot(item.getId());
+            case "armor" -> inv.pushToArmorSlot(item.getId());
+            case "second" -> inv.pushToSecondSlot(item.getId());
+            default -> throw new InventoryIOException("Slot invalide", 99);
+        }
+        updateInventory(inv);
+    }
+
+    /**
+     * Retire l'item d'un des emplacements d'équipement (main, armor, second) pour le replacer dans l'inventaire.
+     * Si l'inventaire est plein, le paramètre force détermine si l'item doit être supprimé.
+     *
+     * @param inventoryId l'identifiant de l'inventaire
+     * @param slot le nom de l'emplacement ciblé (main, armor ou second)
+     * @param force si vrai, l'item est supprimé en cas d'impossibilité de le replacer dans l'inventaire
+     * @throws InventoryIOException si l'inventaire est introuvable ou le slot invalide
+     */
+    public void pullFromSlot(ObjectId inventoryId, String slot, boolean force) throws InventoryIOException {
+        Inventory inv = getInventory(inventoryId);
+        if (inv == null) throw new InventoryIOException("Inventaire introuvable", 2);
+
+        switch (slot.toLowerCase()) {
+            case "main" -> inv.pullFromMainSlot(force);
+            case "armor" -> inv.pullFromArmorSlot(force);
+            case "second" -> inv.pullFromSecondSlot(force);
+            default -> throw new InventoryIOException("Slot invalide", 99);
+        }
+        updateInventory(inv);
+    }
+
+    /**
+     * Met à jour un document d'inventaire dans la base de données MongoDB
+     * en remplaçant l'entrée existante par une nouvelle version sérialisée.
+     *
+     * @param inv l'objet inventaire à sauvegarder dans la base
+     */
+    private void updateInventory(Inventory inv) {
+        String json = gson.toJson(inv);
+        Document doc = Document.parse(json);
+        System.out.println(gson.toJson(inv));
+
+        System.out.println(doc);
+        inventoryCollection.replaceOne(Filters.eq("_id", inv.getId()), doc);
+    }
+
+    /**
+     * Reconstruit dynamiquement un objet item à partir d'un document BSON représentant un slot d'équipement.
+     * Utilise le champ "type" pour déterminer la classe spécifique à instancier.
+     *
+     * @param doc le document BSON représentant un slot (main, armor ou second)
+     * @param gson l'instance Gson utilisée pour la désérialisation
+     * @return un objet de type Item reconstruit dynamiquement ou en tant qu'Item générique si le type est inconnu
+     */
+    private Item reconstructSlot(Document doc, Gson gson) {
+        if (doc == null) return null;
+
+        String type = doc.getString("type");
+        Class<?> clazz = DynamicClassGenerator.getClassByName(type);
+
+        if (clazz != null) {
+            Object obj = gson.fromJson(doc.toJson(), clazz);
+            if (obj instanceof Item item) {
+                return item;
+            }
+        }
+
+        return gson.fromJson(doc.toJson(), Item.class);
     }
 }
