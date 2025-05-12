@@ -48,14 +48,14 @@ public class Inventory {
             this.items = new ArrayList<>();
         }
         if (this.items.size() >= 10) {
-            throw new InventoryIOException("Inventory is full", 1);
+            throw new InventoryIOException("L'inventaire est plein.", 1);
         }
         this.items.add(item);
     }
 
     public void removeItem(Item item) throws InventoryIOException {
         if (item == null || item.getId() == null) {
-            throw new InventoryIOException("Invalid item", 2);
+            throw new InventoryIOException("Item invalide.", 2);
         }
 
         boolean removed = false;
@@ -80,7 +80,7 @@ public class Inventory {
         }
 
         if (!removed) {
-            throw new InventoryIOException("Item not found in inventory or equipment", 2);
+            throw new InventoryIOException("L'item n'a pas été trouvé dans l'inventaire ou l'équipement.", 2);
         }
     }
 
@@ -125,11 +125,11 @@ public class Inventory {
         Item foundItem = items.stream()
                 .filter(item -> item.getId().equals(itemId))
                 .findFirst()
-                .orElseThrow(() -> new InventoryIOException("Item not found in inventory", 2));
+                .orElseThrow(() -> new InventoryIOException("L'item n'a pas été trouvé dans l'inventaire.", 2));
 
         System.out.println(foundItem.getMap());
         if (!AllowedItemTypeUtil.isAllowedForMain(foundItem)) {
-            throw new InventoryIOException("Item type not allowed in main slot", 3);
+            throw new InventoryIOException("Le type de l'item n'est pas autorisé dans le main slot.", 3);
         }
 
         items.remove(foundItem);
@@ -160,11 +160,11 @@ public class Inventory {
         Item foundItem = items.stream()
                 .filter(item -> item.getId().equals(itemId))
                 .findFirst()
-                .orElseThrow(() -> new InventoryIOException("Item not found in inventory", 2));
+                .orElseThrow(() -> new InventoryIOException("L'item n'a pas été trouvé dans l'inventaire.", 2));
 
 
         if (!AllowedItemTypeUtil.isAllowedForArmor(foundItem)) {
-            throw new InventoryIOException("Item type not allowed in armor slot", 3);
+            throw new InventoryIOException("Le type de l'item n'est pas autorisé dans le armor slot.", 3);
         }
 
         items.remove(foundItem);
@@ -195,10 +195,10 @@ public class Inventory {
         Item foundItem = items.stream()
                 .filter(item -> item.getId().equals(itemId))
                 .findFirst()
-                .orElseThrow(() -> new InventoryIOException("Item not found in inventory", 2));
+                .orElseThrow(() -> new InventoryIOException("L'item n'a pas été trouvé dans l'inventaire.", 2));
 
         if (!AllowedItemTypeUtil.isAllowedForSecond(foundItem)) {
-            throw new InventoryIOException("Item type not allowed in second slot", 3);
+            throw new InventoryIOException("Le type de l'item n'est pas autorisé dans le secondary slot.", 3);
         }
 
         items.remove(foundItem);

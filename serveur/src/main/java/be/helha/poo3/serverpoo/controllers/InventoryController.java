@@ -70,25 +70,38 @@ public class InventoryController {
      * @return 200 OK si ajouté, 400 ou 404 avec message d'erreur sinon
      */
     @PostMapping("/{inventoryId}/items")
-    public ResponseEntity<String> addItem(@PathVariable String inventoryId, @RequestBody Map<String, String> payload) {
+    public ResponseEntity<Map<String, Object>> addItem(@PathVariable String inventoryId, @RequestBody Map<String, String> payload) {
         String rawItemId = payload.get("itemId");
 
         if (rawItemId == null || rawItemId.isBlank()) {
-            return ResponseEntity.badRequest().body("{\"erreur\": \"Le champ 'itemId' est manquant ou vide dans la requête.\"}");
+            return ResponseEntity.badRequest().body(Map.of("erreur", "Le champ 'itemId' est manquant ou vide dans la requête."));
         }
 
         if (!ObjectId.isValid(rawItemId)) {
-            return ResponseEntity.badRequest().body("{\"erreur\": \"L'identifiant fourni n'est pas un ObjectId valide.\"}");
+            return ResponseEntity.badRequest().body(Map.of("erreur", "L'identifiant fourni n'est pas un ObjectId valide."));
         }
 
         ObjectId invId = new ObjectId(inventoryId);
         ObjectId itemId = new ObjectId(rawItemId);
 
         try {
+            // Appelle le service (sans retour)
             inventoryService.addItemToInventory(invId, itemId);
-            return ResponseEntity.ok().build();
+
+            // Recharge l'inventaire et retrouve l'item cloné (par son type et dernier ID)
+            Inventory updated = inventoryService.getInventory(invId);
+            Item last = updated.getItems().isEmpty() ? null : updated.getItems().get(updated.getItems().size() - 1);
+
+            if (last == null) {
+                return ResponseEntity.status(500).body(Map.of("erreur", "L'ajout a échoué, item introuvable."));
+            }
+
+            return ResponseEntity.ok(Map.of(
+                    "message", "Item ajouté à l'inventaire.",
+                    "item", last.getMap()
+            ));
         } catch (RuntimeException e) {
-            return ResponseEntity.status(404).body("{\"erreur\": \"" + e.getMessage() + "\"}");
+            return ResponseEntity.status(404).body(Map.of("erreur", e.getMessage()));
         }
     }
 
