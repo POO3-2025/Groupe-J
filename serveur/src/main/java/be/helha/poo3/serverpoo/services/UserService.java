@@ -92,12 +92,15 @@ public class UserService implements UserDetailsService {
              ResultSet rs = stmt.executeQuery()) {
 
             while (rs.next()) {
+                int lastChar = rs.getObject("idLastCharacter") == null ? 0
+                        : rs.getInt("idLastCharacter");
                 Users user = new Users(
                         rs.getInt("id_user"),
                         rs.getString("username"),
                         rs.getString("password"),
                         rs.getString("role"),
-                        rs.getBoolean("activated")
+                        rs.getBoolean("activated"),
+                        lastChar
                 );
                 userList.add(user);
             }
@@ -124,12 +127,15 @@ public class UserService implements UserDetailsService {
 
              try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
+                    int lastChar = rs.getObject("idLastCharacter") == null ? 0
+                            : rs.getInt("idLastCharacter");
                     Users user = new Users(
                             rs.getInt("id_user"),
                             rs.getString("username"),
                             rs.getString("password"),
                             rs.getString("role"),
-                            rs.getBoolean("activated")
+                            rs.getBoolean("activated"),
+                            lastChar
                     );
                     return user;
                 } else {
@@ -159,12 +165,16 @@ public class UserService implements UserDetailsService {
 
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
+                    int lastChar = rs.getObject("idLastCharacter") == null ? 0
+                            : rs.getInt("idLastCharacter");
+
                     return new Users(
                             rs.getInt("id_user"),
                             rs.getString("username"),
                             rs.getString("password"),
                             rs.getString("role"),
-                            rs.getBoolean("activated")
+                            rs.getBoolean("activated"),
+                            lastChar
                     );
                 } else {
                     throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Utilisateur non trouvé avec le username : " + username);
@@ -334,4 +344,70 @@ public class UserService implements UserDetailsService {
         }
         return false;
     }
+
+    /**
+     * Met à jour uniquement le champ idLastCharacter de l'utilisateur.
+     *
+     * @param id_user            ID de l'utilisateur à modifier (tel qu'en base).
+     * @param newLastCharacterId ID du personnage à lier (nullable : met la colonne à NULL).
+     * @throws RuntimeException si une erreur SQL survient pendant la requête.
+     */
+    public void updateLastCharacter(int id_user, Integer newLastCharacterId) {
+
+        /* ----------------------------------------------------------------
+         * 1.  Validation métier
+         * ----------------------------------------------------------------
+         *    newLastCharacterId == null  →  aucune vérification d'existence.
+         *    sinon : on confirme que le personnage existe *et* appartient
+         *    bien à l'utilisateur.
+         * ---------------------------------------------------------------- */
+        if (newLastCharacterId != null) {
+            String checkSql = "SELECT 1 FROM `character` " +
+                    "WHERE idCharacter = ? AND idUser = ?";
+            try (Connection conn = dataSource.getConnection();
+                 PreparedStatement stmt = conn.prepareStatement(checkSql)) {
+
+                stmt.setInt(1, newLastCharacterId);
+                stmt.setInt(2, id_user);
+
+                try (ResultSet rs = stmt.executeQuery()) {
+                    if (!rs.next()) {
+                        throw new ResponseStatusException(
+                                HttpStatus.BAD_REQUEST,
+                                "Le personnage " + newLastCharacterId +
+                                        " n'existe pas ou n'appartient pas à l'utilisateur.");
+                    }
+                }
+            } catch (SQLException e) {
+                throw new RuntimeException("Erreur lors de la validation du personnage", e);
+            }
+        }
+
+        /* ----------------------------------------------------------------
+         * 2.  Mise à jour idLastCharacter dans `user`
+         * ---------------------------------------------------------------- */
+        String updateSql = "UPDATE `user` SET idLastCharacter = ? WHERE id_user = ?";
+
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(updateSql)) {
+
+            if (newLastCharacterId == null) {
+                stmt.setNull(1, Types.INTEGER);      // efface la sélection
+            } else {
+                stmt.setInt(1, newLastCharacterId);
+            }
+            stmt.setInt(2, id_user);
+
+            int rows = stmt.executeUpdate();
+            if (rows == 0) {
+                throw new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Aucun utilisateur trouvé avec l'ID " + id_user);
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException("Erreur lors de la mise à jour du dernier personnage", e);
+        }
+    }
+
 }

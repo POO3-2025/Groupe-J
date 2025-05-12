@@ -1,6 +1,6 @@
 package be.helha.poo3.serverpoo.models;
 
-public class Character {
+public class GameCharacter {
     private int idCharacter;
     private int idUser;
     private String name;
@@ -83,7 +83,7 @@ public class Character {
         this.strength = strength;
     }
 
-    public Character(int idCharacter, int idUser, String name, String inventoryId, int maxHP, int currentHP, int constitution, int dexterity, int strength) {
+    public GameCharacter(int idCharacter, int idUser, String name, String inventoryId, int maxHP, int currentHP, int constitution, int dexterity, int strength) {
         this.idCharacter = idCharacter;
         this.idUser = idUser;
         this.name = name;

@@ -47,16 +47,16 @@ public class InventoryService {
      * @return l'objet Inventory nouvellement créé, avec son identifiant MongoDB (_id) défini.
      */
     public Inventory createInventory() {
+
         Inventory inventory = new Inventory();
+
         Gson gson = new GsonBuilder()
                 .registerTypeAdapter(ObjectId.class, new ObjectIdAdapter())
                 .create();
 
-        String json = gson.toJson(inventory); // Inventory -> JSON string
-        Document doc = Document.parse(json); // JSON string -> Document
+        Document doc = Document.parse(gson.toJson(inventory));
         inventoryCollection.insertOne(doc);
 
-        inventory.setId(doc.getObjectId("_id"));
         return inventory;
     }
 
