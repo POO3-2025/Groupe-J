@@ -1,9 +1,10 @@
 package be.helha.poo3.serverpoo.controllers;
 
 
+import be.helha.poo3.serverpoo.models.CharacterWithPos;
 import be.helha.poo3.serverpoo.models.GameCharacter;
-import be.helha.poo3.serverpoo.models.Users;
 import be.helha.poo3.serverpoo.services.CharacterService;
+import be.helha.poo3.serverpoo.services.UserService;
 import be.helha.poo3.serverpoo.utils.JwtUtils;
 import io.jsonwebtoken.JwtException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +18,8 @@ public class CharacterController {
 
     @Autowired
     private CharacterService characterService;
+    @Autowired
+    private UserService userService;
 
     @Autowired
     private JwtUtils jwtUtils;
@@ -42,6 +45,17 @@ public class CharacterController {
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erreur lors de la mise à jour : " + e.getMessage());
         }
+    }
+
+    @GetMapping(path = "/lastCharacter/{id}")
+    public ResponseEntity<?> getLastCharacter(@PathVariable int id) {
+        try {
+            return ResponseEntity.ok(characterService.getLastCharacter(id));
+
+        } catch (RuntimeException e){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+
     }
 
     @PostMapping
@@ -70,6 +84,56 @@ public class CharacterController {
         }
 
     }
+
+        @GetMapping(path = "/inGameCharacters")
+    public ResponseEntity<?> getInGameCharacter(){
+        return ResponseEntity.ok(characterService.getLoadedCharacters());
+    }
+
+    @PostMapping(path = "/choice/{id}")
+    public ResponseEntity<?> choiceCharacter(@RequestHeader(value = "Authorization", required = false) String authHeader,@PathVariable int id) {
+        if (authHeader == null || authHeader.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Authorization header is missing");
+        }
+        String token = authHeader.startsWith("Bearer ") ? authHeader.substring(7) : authHeader;
+        try {
+            int tokenUserId = jwtUtils.getUserIdFromToken(token);
+            if(characterService.characterExistsById(id)){
+                CharacterWithPos character = characterService.getInGameCharacterByUserId(tokenUserId);
+                if (character == null) {
+                    userService.updateLastCharacter(tokenUserId,id);
+                    GameCharacter newCharacter = characterService.getCharacterById(id);
+                    return ResponseEntity.ok(characterService.addCharacterInGame(newCharacter));
+                }
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Vous avez déjà un personnage en jeu");
+            }
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Personnage inexistant");
+        } catch (JwtException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token invalide : " + e.getMessage());
+        }
+    }
+
+    @DeleteMapping(path = "/leave")
+    public ResponseEntity<?> leaveCharacter(@RequestHeader(value = "Authorization", required = false) String authHeader) {
+        if (authHeader == null || authHeader.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Authorization header is missing");
+        }
+        String token = authHeader.startsWith("Bearer ") ? authHeader.substring(7) : authHeader;
+        try {
+            int tokenUserId = jwtUtils.getUserIdFromToken(token);
+            GameCharacter character = characterService.getInGameCharacterByUserId(tokenUserId);
+            if(character != null){
+                if (characterService.removeCharacterFromGame(character.getIdCharacter())){
+                    return ResponseEntity.ok("sortie effectuée");
+                }
+                return ResponseEntity.ok("erreur lors de la sortie du personnage avec l'id "+ character.getIdCharacter() );
+            }
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Character inexistant");
+        }catch (JwtException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token invalide : " + e.getMessage());
+        }
+    }
+
 
     @PutMapping(path="/{id}")
     public ResponseEntity<?> changeCharacterName(

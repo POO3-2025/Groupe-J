@@ -1,10 +1,7 @@
 package be.helha.poo3.serverpoo.services;
 
 
-import be.helha.poo3.serverpoo.models.CharacterWithPos;
-import be.helha.poo3.serverpoo.models.GameCharacter;
-import be.helha.poo3.serverpoo.models.Inventory;
-import be.helha.poo3.serverpoo.models.Users;
+import be.helha.poo3.serverpoo.models.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Primary;
 import org.springframework.http.HttpStatus;
@@ -12,9 +9,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import javax.sql.DataSource;
+import java.awt.*;
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
 @Primary
 @Service
@@ -26,7 +26,84 @@ public class CharacterService {
     @Autowired
     private InventoryService inventoryService;
 
-    private List<CharacterWithPos> loadedCharacters;
+    @Autowired
+    private DungeonMapService dungeonMapService;
+
+    private final List<CharacterWithPos> loadedCharacters = new ArrayList<>();
+
+    public List<CharacterWithPos> getLoadedCharacters(){
+        return loadedCharacters;
+    }
+
+    public CharacterWithPos addCharacterInGame(GameCharacter character) {
+        Collection<Room> rooms = dungeonMapService.getAllRooms();
+        int r = ThreadLocalRandom.current().nextInt(rooms.size());
+        Room randomRoom = dungeonMapService.getAllRooms().stream().skip(r).findFirst().orElseThrow();
+        CharacterWithPos characterWithPos = new CharacterWithPos(
+                character.getIdCharacter(),
+                character.getIdUser(),
+                character.getName(),
+                character.getInventoryId(),
+                character.getMaxHP(),
+                character.getCurrentHP(),
+                character.getConstitution(),
+                character.getDexterity(),
+                character.getStrength(),
+                new Point(randomRoom.getX(), randomRoom.getY())
+        );
+        characterWithPos.setLastAction();
+        loadedCharacters.add(characterWithPos);
+        return characterWithPos;
+    }
+
+    public boolean removeCharacterFromGame(int characterId) {
+        return loadedCharacters.removeIf(c -> c.getIdCharacter() == characterId);
+    }
+
+    public CharacterWithPos getCharacterFromGame(int characterId) throws RuntimeException {
+        CharacterWithPos character = loadedCharacters.stream().filter(c -> c.getIdCharacter() == characterId).findFirst().orElse(null);
+        if (character == null) {
+            throw new RuntimeException("No character with id " + characterId + " found");
+        } else if (character.hasActedRecently(20)) {
+            return character;
+        } else {
+            removeCharacterFromGame(character.getIdCharacter());
+            throw new RuntimeException("User was AFK for to much time");
+        }
+    }
+
+    public CharacterWithPos getInGameCharacterByUserId(int userId) {
+        return loadedCharacters.stream().filter(c -> c.getIdUser() == userId).findFirst().orElse(null);
+    }
+
+    public GameCharacter getLastCharacter(int userId) throws RuntimeException {
+        String sql = "SELECT c.* FROM `user` u JOIN `character` c ON c.idCharacter = u.idLastCharacter WHERE u.id_user = ?";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, userId);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return new GameCharacter(
+                            rs.getInt("idCharacter"),
+                            rs.getInt("idUser"),
+                            rs.getString("name"),
+                            rs.getString("inventoryId"),
+                            rs.getInt("maxHP"),
+                            rs.getInt("currentHP"),
+                            rs.getInt("constitution"),
+                            rs.getInt("dexterity"),
+                            rs.getInt("strength")
+                    );
+                } else {
+                    throw new IllegalArgumentException("Aucun personnage trouvé");
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Erreur lors de la récupération du personnage : "+ e.getMessage(), e);
+        }
+    }
 
     public List<GameCharacter> getCharacters(int userId) {
         String sql = "SELECT * FROM `character` WHERE idUser = ?";
@@ -59,13 +136,14 @@ public class CharacterService {
     }
 
 
-    public GameCharacter getCharacterById(int id) {
+
+    public GameCharacter getCharacterById(int characterId) {
         String sql = "SELECT * FROM `character` WHERE idCharacter = ?";
 
         try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            stmt.setInt(1, id);
+            stmt.setInt(1, characterId);
 
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
@@ -81,7 +159,7 @@ public class CharacterService {
                             rs.getInt("strength")
                     );
                 } else {
-                    throw new IllegalArgumentException("No character with id " + id + " found");
+                    throw new IllegalArgumentException("No character with id " + characterId + " found");
                 }
             }
         } catch (SQLException e) {
@@ -125,13 +203,13 @@ public class CharacterService {
         return character;
     }
 
-    public Boolean updateCharacterName(int id, String name) throws IllegalArgumentException {
+    public Boolean updateCharacterName(int characterId, String name) throws IllegalArgumentException {
         if(characterExistsByName(name)) throw new IllegalArgumentException("Le nom est déjà utilisé");
         String sql = "UPDATE `character` SET name = ? WHERE idCharacter = ?";
         try(Connection conn = dataSource.getConnection();
             PreparedStatement stmt = conn.prepareStatement(sql)){
             stmt.setString(1, name);
-            stmt.setInt(2, id);
+            stmt.setInt(2, characterId);
             int rows = stmt.executeUpdate();          // <‑‑ executeUpdate ici
             return rows > 0;
         } catch (SQLException e) {
@@ -139,11 +217,11 @@ public class CharacterService {
         }
     }
 
-    public void deleteCharacterById(int id) {
+    public void deleteCharacterById(int characterId) {
         String sql = "DELETE FROM `character` WHERE idCharacter = ?";
         try(Connection conn = dataSource.getConnection();
             PreparedStatement stmt = conn.prepareStatement(sql)){
-            stmt.setInt(1, id);
+            stmt.setInt(1, characterId);
             stmt.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException("Erreur lors de la vérification du personnage", e);
@@ -168,11 +246,11 @@ public class CharacterService {
     }
 
 
-    public boolean characterExistsByName(String name) {
+    public boolean characterExistsByName(String characterName) {
         String sql = "SELECT COUNT(*) FROM `character` WHERE name = ?";
         try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setString(1, name);
+            stmt.setString(1, characterName);
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
                     return rs.getInt(1) > 0;
@@ -184,11 +262,11 @@ public class CharacterService {
         return false;
     }
 
-    public boolean characterExistsById(int id) {
+    public boolean characterExistsById(int characterId) {
         String sql = "SELECT COUNT(*) FROM `character` WHERE idCharacter = ?";
         try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setInt(1, id);
+            stmt.setInt(1, characterId);
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
                     return rs.getInt(1) > 0;
