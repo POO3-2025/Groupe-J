@@ -106,7 +106,7 @@ public class InGameCharacterService {
     public CharacterWithPos getInGameCharacterByUserId(int userId) {
         CharacterWithPos character = loadedCharacters.stream().filter(c -> c.getIdUser() == userId).findFirst().orElse(null);
         if (character == null) {
-            throw new IllegalArgumentException("No character from user with id " + userId + " found");
+            return null;
         } else if (character.hasActedRecently(20)) {
             return character;
         } else {
