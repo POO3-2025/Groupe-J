@@ -7,9 +7,6 @@ import jakarta.annotation.PostConstruct;
 import org.springframework.scheduling.annotation.Scheduled;
 
 
-
-
-
 import java.awt.*;
 import java.util.*;
 import java.util.List;

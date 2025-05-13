@@ -1,6 +1,5 @@
 package be.helha.poo3.serverpoo.services;
 
-
 import be.helha.poo3.serverpoo.models.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Primary;
@@ -9,12 +8,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import javax.sql.DataSource;
-import java.awt.*;
 import java.sql.*;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
 
 @Primary
 @Service
@@ -28,14 +24,6 @@ public class CharacterService {
 
     @Autowired
     private DungeonMapService dungeonMapService;
-
-
-
-
-
-
-
-
 
     public List<GameCharacter> getCharactersByUser(int userId) {
         String sql = "SELECT * FROM `character` WHERE idUser = ?";
@@ -66,7 +54,6 @@ public class CharacterService {
         }
         return GameCharacterList;
     }
-
 
 
     public GameCharacter getCharacterById(int characterId) {
