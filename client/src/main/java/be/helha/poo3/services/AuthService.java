@@ -38,11 +38,13 @@ public class AuthService {
                 Map<?, ?> responseMap = gson.fromJson(json, Map.class);
 
                 String token = (String) responseMap.get("accessToken");
+                String refreshToken = (String) responseMap.get("refreshToken");
                 Double idUserDouble = (Double) responseMap.get("id_user"); // Gson mappe les nombres JSON en Double
                 int id_user = idUserDouble.intValue(); // Convertit proprement en int
 
-                if (token != null && id_user > 0) {
+                if (token != null && refreshToken != null && id_user > 0) {
                     UserSession.setUsername(username);
+                    UserSession.setRefreshToken(refreshToken);
                     UserSession.setAccessToken(token);
                     UserSession.setId_user(id_user); // Stocke l'ID utilisateur dans la session
                     return true;
