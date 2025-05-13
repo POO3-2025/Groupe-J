@@ -8,6 +8,8 @@ import be.helha.poo3.serverpoo.services.InGameCharacterService;
 import be.helha.poo3.serverpoo.services.UserService;
 import be.helha.poo3.serverpoo.utils.JwtUtils;
 import io.jsonwebtoken.JwtException;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -38,6 +40,7 @@ public class CharacterController {
 
     @GetMapping(path = "/myCharacters")
     public ResponseEntity<?> getMyCharacters(@RequestHeader(value = "Authorization", required = false) String authHeader) {
+        System.out.println(authHeader);
         if (authHeader == null || authHeader.isEmpty()) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Authorization header is missing");
         }
@@ -144,7 +147,7 @@ public class CharacterController {
     public ResponseEntity<?> changeCharacterName(
             @PathVariable int id,
             @RequestHeader(value = "Authorization", required = false) String authHeader,
-            @RequestBody String name) {
+            @RequestBody RenameDto dto) {
         if (authHeader == null || authHeader.isEmpty()) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Authorization header is missing");
         }
@@ -153,7 +156,7 @@ public class CharacterController {
         try {
             int tokenUserId = jwtUtils.getUserIdFromToken(token);
             if (characterService.userOwnsCharacter(tokenUserId,id)){
-                characterService.updateCharacterName(id,name);
+                characterService.updateCharacterName(id,dto.newName());
                 return ResponseEntity.ok("Changement de nom effectué avec succès");
             } else {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Vous ne possédé pas se personnage");
@@ -194,3 +197,4 @@ public class CharacterController {
 
     }
 }
+

@@ -39,6 +39,12 @@ public class MainMenuView {
             new ProfileView(gui, screen).show();
         }));
 
+
+        panel.addComponent(new Button("Gèrer personnages", () -> {
+            //menuWindow.close();
+            new CharactersManagementView(gui, screen).mainWindow();
+        }));
+
         panel.addComponent(new EmptySpace());
 
         // Bouton "Déconnexion"
