@@ -4,6 +4,7 @@ package be.helha.poo3.serverpoo.controllers;
 import be.helha.poo3.serverpoo.models.CharacterWithPos;
 import be.helha.poo3.serverpoo.models.GameCharacter;
 import be.helha.poo3.serverpoo.services.CharacterService;
+import be.helha.poo3.serverpoo.services.InGameCharacterService;
 import be.helha.poo3.serverpoo.services.UserService;
 import be.helha.poo3.serverpoo.utils.JwtUtils;
 import io.jsonwebtoken.JwtException;
@@ -18,8 +19,12 @@ public class CharacterController {
 
     @Autowired
     private CharacterService characterService;
+
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private InGameCharacterService inGameCharacterService;
 
     @Autowired
     private JwtUtils jwtUtils;
@@ -39,7 +44,7 @@ public class CharacterController {
         String token = authHeader.startsWith("Bearer ") ? authHeader.substring(7) : authHeader;
         try {
             int tokenUserId = jwtUtils.getUserIdFromToken(token);
-            return ResponseEntity.ok(characterService.getCharacters(tokenUserId));
+            return ResponseEntity.ok(characterService.getCharactersByUser(tokenUserId));
         } catch (JwtException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token invalide : " + e.getMessage());
         } catch (RuntimeException e) {
@@ -50,7 +55,7 @@ public class CharacterController {
     @GetMapping(path = "/lastCharacter/{id}")
     public ResponseEntity<?> getLastCharacter(@PathVariable int id) {
         try {
-            return ResponseEntity.ok(characterService.getLastCharacter(id));
+            return ResponseEntity.ok(inGameCharacterService.getLastCharacter(id));
 
         } catch (RuntimeException e){
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
@@ -87,7 +92,7 @@ public class CharacterController {
 
         @GetMapping(path = "/inGameCharacters")
     public ResponseEntity<?> getInGameCharacter(){
-        return ResponseEntity.ok(characterService.getLoadedCharacters());
+        return ResponseEntity.ok(inGameCharacterService.getLoadedCharacters());
     }
 
     @PostMapping(path = "/choice/{id}")
@@ -99,11 +104,11 @@ public class CharacterController {
         try {
             int tokenUserId = jwtUtils.getUserIdFromToken(token);
             if(characterService.characterExistsById(id)){
-                CharacterWithPos character = characterService.getInGameCharacterByUserId(tokenUserId);
+                CharacterWithPos character = inGameCharacterService.getInGameCharacterByUserId(tokenUserId);
                 if (character == null) {
                     userService.updateLastCharacter(tokenUserId,id);
                     GameCharacter newCharacter = characterService.getCharacterById(id);
-                    return ResponseEntity.ok(characterService.addCharacterInGame(newCharacter));
+                    return ResponseEntity.ok(inGameCharacterService.addCharacterInGame(newCharacter));
                 }
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Vous avez déjà un personnage en jeu");
             }
@@ -121,9 +126,9 @@ public class CharacterController {
         String token = authHeader.startsWith("Bearer ") ? authHeader.substring(7) : authHeader;
         try {
             int tokenUserId = jwtUtils.getUserIdFromToken(token);
-            GameCharacter character = characterService.getInGameCharacterByUserId(tokenUserId);
+            GameCharacter character = inGameCharacterService.getInGameCharacterByUserId(tokenUserId);
             if(character != null){
-                if (characterService.removeCharacterFromGame(character.getIdCharacter())){
+                if (inGameCharacterService.removeCharacterFromGame(character.getIdCharacter())){
                     return ResponseEntity.ok("sortie effectuée");
                 }
                 return ResponseEntity.ok("erreur lors de la sortie du personnage avec l'id "+ character.getIdCharacter() );
