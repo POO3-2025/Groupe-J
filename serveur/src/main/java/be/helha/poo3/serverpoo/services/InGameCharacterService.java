@@ -38,6 +38,12 @@ public class InGameCharacterService {
         return loadedCharacters;
     }
 
+    /**
+     * Ajoute un personnage à la liste des personnages en jeu.
+     *
+     * @param character le personnage à ajouter
+     * @return l'objet {@code CharacterWithPos} ajouté, avec sa position choisie aléatoirement
+     */
     public CharacterWithPos addCharacterInGame(GameCharacter character) {
         Collection<Room> rooms = dungeonMapService.getAllRooms();
         int r = ThreadLocalRandom.current().nextInt(rooms.size());
@@ -59,14 +65,28 @@ public class InGameCharacterService {
         return characterWithPos;
     }
 
+    /**
+     * retire un personnage de la liste des personnages en jeu.
+     *
+     * @param characterId l'id du personnage à retirer
+     * @return un booléen indiquant si le retrait a été effectué avec succès
+     */
     public boolean removeCharacterFromGame(int characterId) {
         return loadedCharacters.removeIf(c -> c.getIdCharacter() == characterId);
     }
 
+    /**
+     * Récupère le personnage correspondant à l'ID spécifié dans la liste des personnages en jeu.
+     *
+     * @param characterId l'ID du personnage
+     * @return un objet {@code CharacterWithPos} correspondant
+     * @throws RuntimeException si l'utilisateur n'a fait aucune action depuis un certain temps, l'excluant du donjon
+     * @throws IllegalArgumentException si aucune personnage n'a été trouvé avec l'id spécifié
+     */
     public CharacterWithPos getCharacterFromGame(int characterId) throws RuntimeException {
         CharacterWithPos character = loadedCharacters.stream().filter(c -> c.getIdCharacter() == characterId).findFirst().orElse(null);
         if (character == null) {
-            throw new RuntimeException("No character with id " + characterId + " found");
+            throw new IllegalArgumentException("No character with id " + characterId + " found");
         } else if (character.hasActedRecently(20)) {
             return character;
         } else {
@@ -75,10 +95,34 @@ public class InGameCharacterService {
         }
     }
 
+    /**
+     * Récupère le personnage appartenant à l'utisateur dont l'ID est spécifié dans la liste des personnages en jeu.
+     *
+     * @param userId l'ID de l'utilisateur
+     * @return un objet {@code CharacterWithPos} correspondant
+     * @throws RuntimeException si l'utilisateur n'a fait aucune action depuis un certain temps, l'excluant du donjon
+     * @throws IllegalArgumentException si aucune personnage n'a été trouvé pour l'utilisateur spécifié
+     */
     public CharacterWithPos getInGameCharacterByUserId(int userId) {
-        return loadedCharacters.stream().filter(c -> c.getIdUser() == userId).findFirst().orElse(null);
+        CharacterWithPos character = loadedCharacters.stream().filter(c -> c.getIdUser() == userId).findFirst().orElse(null);
+        if (character == null) {
+            return null;
+        } else if (character.hasActedRecently(20)) {
+            return character;
+        } else {
+            removeCharacterFromGame(character.getIdCharacter());
+            throw new RuntimeException("User was AFK for to much time");
+        }
     }
 
+    /**
+     * Récupère le personnage actif correspondant à l'ID spécifié dans la base de données.
+     *
+     * @param userId l'ID de l'utilisateur
+     * @return un objet GameCharacter correspondant
+     * @throws IllegalArgumentException is aucun personnage récent n'a été trouvé pour l'utilisateur
+     * @throws RuntimeException si une erreur survient lors de l'exécution de la requête SQL
+     */
     public GameCharacter getLastCharacter(int userId) throws RuntimeException {
         String sql = "SELECT c.* FROM `user` u JOIN `character` c ON c.idCharacter = u.idLastCharacter WHERE u.id_user = ?";
         try (Connection conn = dataSource.getConnection();
