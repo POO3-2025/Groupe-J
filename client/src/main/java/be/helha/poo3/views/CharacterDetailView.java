@@ -74,7 +74,7 @@ public class CharacterDetailView {
         buttonPanel.addComponent(new Button("Supprimer", ()->{
             this.deleteCharacter(window);
         }));
-w
+
         main.addComponent(buttonPanel);
 
         window.setComponent(main);

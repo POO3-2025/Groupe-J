@@ -41,7 +41,7 @@ public class MainMenuView {
 
 
         panel.addComponent(new Button("Gèrer personnages", () -> {
-            //menuWindow.close();
+            menuWindow.close();
             new CharactersManagementView(gui, screen).mainWindow();
         }));
 

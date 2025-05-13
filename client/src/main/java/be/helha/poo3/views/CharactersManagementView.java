@@ -47,7 +47,14 @@ public class CharactersManagementView {
         mainPanel.addComponent(listBox);
         mainPanel.addComponent(new EmptySpace());
 
-        mainPanel.addComponent(new Button("Retour", menuWindow::close));
+        mainPanel.addComponent(new Button("Retour", ()->{
+            menuWindow.close();
+            new MainMenuView(gui, screen).show();
+        }));
+
+        mainPanel.addComponent(new Button("Créer un personnage", ()->{
+            this.openCharacterCreationView(menuWindow);
+        }));
 
         menuWindow.setComponent(mainPanel);
 
@@ -59,6 +66,12 @@ public class CharactersManagementView {
     public void openCharacterActionWindow(GameCharacter character, BasicWindow parent){
         parent.close();
         new CharacterDetailView(this.gui,this.screen,character).mainWindow();
+        mainWindow();
+    }
+
+    public void openCharacterCreationView(BasicWindow parent){
+        parent.close();
+        new CharacterCreationView(gui,screen).show();
         mainWindow();
     }
 
