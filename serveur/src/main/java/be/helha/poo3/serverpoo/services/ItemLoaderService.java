@@ -8,7 +8,6 @@ import be.helha.poo3.serverpoo.components.DynamicClassGenerator;
 import com.mongodb.client.MongoCollection;
 import jakarta.annotation.PostConstruct;
 import org.bson.Document;
-import org.bson.types.ObjectId;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 

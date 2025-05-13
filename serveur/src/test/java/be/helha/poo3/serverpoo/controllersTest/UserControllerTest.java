@@ -42,15 +42,15 @@ public class UserControllerTest {
 
     @BeforeEach
     void setUp() {
-        existingUser = new Users(1, "admin", "encodedPass", "USER", true);
-        newUser = new Users(0, "newUser", "plainPass", null, false);
+        existingUser = new Users(1, "admin", "encodedPass", "USER", true,0);
+        newUser = new Users(0, "newUser", "plainPass", null, false, 0);
     }
 
     @Test
     void testGetUsers_Success() {
         List<Users> mockUsers = Arrays.asList(
-                new Users(1, "alice", "passAlice", "USER", true),
-                new Users(2, "bob", "passBob", "ADMIN", true)
+                new Users(1, "alice", "passAlice", "USER", true,0),
+                new Users(2, "bob", "passBob", "ADMIN", true,0)
         );
         when(userService.getUsers()).thenReturn(mockUsers);
 
@@ -84,7 +84,7 @@ public class UserControllerTest {
 
     @Test
     void testAddUser_Success() {
-        Users insertedUser = new Users(10, "newUser", "encoded", "USER", true);
+        Users insertedUser = new Users(10, "newUser", "encoded", "USER", true, 0);
         when(userService.addUser(newUser)).thenReturn(insertedUser);
 
         Users result = userController.addUser(newUser);
@@ -134,7 +134,7 @@ public class UserControllerTest {
     void testUpdateUser_WithToken_Success() {
         int userId = 1;
         String tokenHeader = "Bearer faketoken";
-        Users updatedUser = new Users(userId, "updatedUsername", "updatedPass", "ADMIN", true);
+        Users updatedUser = new Users(userId, "updatedUsername", "updatedPass", "ADMIN", true, 0);
 
         when(jwtUtils.getUserIdFromToken("faketoken")).thenReturn(userId);
         when(userService.updateUser(eq(userId), any(Users.class))).thenReturn(updatedUser);
@@ -154,7 +154,7 @@ public class UserControllerTest {
 
         when(jwtUtils.getUserIdFromToken("wrongtoken")).thenReturn(1);
 
-        Users dummyUpdate = new Users(2, "other", "pass", "USER", true);
+        Users dummyUpdate = new Users(2, "other", "pass", "USER", true, 0);
 
         ResponseEntity<?> response = userController.updateUser(tokenHeader, pathId, dummyUpdate);
 

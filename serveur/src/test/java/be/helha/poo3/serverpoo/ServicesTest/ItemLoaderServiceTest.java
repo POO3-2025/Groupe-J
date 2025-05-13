@@ -31,7 +31,7 @@ public class ItemLoaderServiceTest {
     @Test
     public void shouldLoadItemsWithExpectedFields() throws Exception {
         List<Item> items = service.getLoadedItems();
-        assertEquals(4, items.size(), "Il doit y avoir exactement 4 items chargés");
+        assertEquals(5, items.size(), "Il doit y avoir exactement 5 items chargés");
 
         for (Item item : items) {
             switch (item.getName()) {
@@ -39,27 +39,34 @@ public class ItemLoaderServiceTest {
                     assertEquals("Sword", item.getType());
                     assertEquals(Rarity.common, item.getRarity());
                     assertEquals("A simple sword", item.getDescription());
-                    assertEquals(50, getFieldValue(item, "damage"));
+                    assertEquals(50, item.getInt("damage"));
                 }
                 case "Basic Shield" -> {
                     assertEquals("Shield", item.getType());
                     assertEquals(Rarity.common, item.getRarity());
                     assertEquals("A simple Shield", item.getDescription());
-                    assertEquals(20, getFieldValue(item, "defense"));
+                    assertEquals(20, item.getInt("defense"));
                 }
                 case "Upgraded Shield" -> {
                     assertEquals("Shield", item.getType());
                     assertEquals(Rarity.uncommon, item.getRarity());
                     assertEquals("A more robust shield", item.getDescription());
-                    assertEquals(30, getFieldValue(item, "defense"));
+                    assertEquals(30, item.getInt("defense"));
                 }
                 case "Small potion" -> {
                     assertEquals("Potion", item.getType());
                     assertEquals(Rarity.common, item.getRarity());
                     assertEquals("A basic healing potion", item.getDescription());
                     assertEquals("Consumable", item.getSubType());
-                    assertEquals(10, getFieldValue(item, "capacity"));
-                    assertEquals(10, getFieldValue(item, "currentCapacity"));
+                    assertEquals(10, item.getInt("capacity"));
+                    assertEquals(10, item.getInt("currentCapacity"));
+                }
+                case "Steel forged armor" -> {
+                    assertEquals("Heavy", item.getType());
+                    assertEquals(Rarity.rare, item.getRarity());
+                    assertEquals("A good manufacturing forged armor", item.getDescription());
+                    assertEquals("Armor", item.getSubType());
+                    assertEquals(50, item.getInt("defense"));
                 }
                 default -> fail("Nom d’item inconnu : " + item.getName());
             }
@@ -103,11 +110,11 @@ public class ItemLoaderServiceTest {
 
     @Test
     public void shouldFindItemsByRarityAndSubType() {
-        List<Item> result = service.findByRarityAndSubType(Rarity.common, "Equipement");
-        assertFalse(result.isEmpty(), "Un ou plusieurs objets doivent avoir la rareté 'common' et le subType 'Equipement'");
+        List<Item> result = service.findByRarityAndSubType(Rarity.common, "Weapon");
+        assertFalse(result.isEmpty(), "Un ou plusieurs objets doivent avoir la rareté 'common' et le subType 'Weapon'");
         for (Item item : result) {
             assertEquals(Rarity.common, item.getRarity());
-            assertEquals("Equipement", item.getSubType());
+            assertEquals("Weapon", item.getSubType());
         }
     }
 

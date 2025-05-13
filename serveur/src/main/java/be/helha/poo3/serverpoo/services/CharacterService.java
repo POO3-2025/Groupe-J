@@ -1,6 +1,5 @@
 package be.helha.poo3.serverpoo.services;
 
-
 import be.helha.poo3.serverpoo.models.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Primary;
@@ -9,12 +8,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import javax.sql.DataSource;
-import java.awt.*;
 import java.sql.*;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
 
 @Primary
 @Service
@@ -29,83 +25,14 @@ public class CharacterService {
     @Autowired
     private DungeonMapService dungeonMapService;
 
-    private final List<CharacterWithPos> loadedCharacters = new ArrayList<>();
-
-    public List<CharacterWithPos> getLoadedCharacters(){
-        return loadedCharacters;
-    }
-
-    public CharacterWithPos addCharacterInGame(GameCharacter character) {
-        Collection<Room> rooms = dungeonMapService.getAllRooms();
-        int r = ThreadLocalRandom.current().nextInt(rooms.size());
-        Room randomRoom = dungeonMapService.getAllRooms().stream().skip(r).findFirst().orElseThrow();
-        CharacterWithPos characterWithPos = new CharacterWithPos(
-                character.getIdCharacter(),
-                character.getIdUser(),
-                character.getName(),
-                character.getInventoryId(),
-                character.getMaxHP(),
-                character.getCurrentHP(),
-                character.getConstitution(),
-                character.getDexterity(),
-                character.getStrength(),
-                new Point(randomRoom.getX(), randomRoom.getY())
-        );
-        characterWithPos.setLastAction();
-        loadedCharacters.add(characterWithPos);
-        return characterWithPos;
-    }
-
-    public boolean removeCharacterFromGame(int characterId) {
-        return loadedCharacters.removeIf(c -> c.getIdCharacter() == characterId);
-    }
-
-    public CharacterWithPos getCharacterFromGame(int characterId) throws RuntimeException {
-        CharacterWithPos character = loadedCharacters.stream().filter(c -> c.getIdCharacter() == characterId).findFirst().orElse(null);
-        if (character == null) {
-            throw new RuntimeException("No character with id " + characterId + " found");
-        } else if (character.hasActedRecently(20)) {
-            return character;
-        } else {
-            removeCharacterFromGame(character.getIdCharacter());
-            throw new RuntimeException("User was AFK for to much time");
-        }
-    }
-
-    public CharacterWithPos getInGameCharacterByUserId(int userId) {
-        return loadedCharacters.stream().filter(c -> c.getIdUser() == userId).findFirst().orElse(null);
-    }
-
-    public GameCharacter getLastCharacter(int userId) throws RuntimeException {
-        String sql = "SELECT c.* FROM `user` u JOIN `character` c ON c.idCharacter = u.idLastCharacter WHERE u.id_user = ?";
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-            stmt.setInt(1, userId);
-
-            try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) {
-                    return new GameCharacter(
-                            rs.getInt("idCharacter"),
-                            rs.getInt("idUser"),
-                            rs.getString("name"),
-                            rs.getString("inventoryId"),
-                            rs.getInt("maxHP"),
-                            rs.getInt("currentHP"),
-                            rs.getInt("constitution"),
-                            rs.getInt("dexterity"),
-                            rs.getInt("strength")
-                    );
-                } else {
-                    throw new IllegalArgumentException("Aucun personnage trouvé");
-                }
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException("Erreur lors de la récupération du personnage : "+ e.getMessage(), e);
-        }
-    }
-
-    public List<GameCharacter> getCharacters(int userId) {
+    /**
+     * Récupère une liste de personnages appartenant à l'utilisateur dont l'ID est spécifié dans la base de données.
+     *
+     * @param userId l'ID de l'utilisateur à qui appartiennent les personnages à rechercher
+     * @return une liste de GameCharacter correspondant à l'utilisateur, ou une liste vide si aucun personnage n'est trouvé
+     * @throws RuntimeException si une erreur survient lors de l'exécution de la requête SQL
+     */
+    public List<GameCharacter> getCharactersByUser(int userId) {
         String sql = "SELECT * FROM `character` WHERE idUser = ?";
 
         List<GameCharacter> GameCharacterList = new ArrayList<>();
@@ -136,7 +63,13 @@ public class CharacterService {
     }
 
 
-
+    /**
+     * Récupère le personnage correspondant à l'ID spécifié dans la base de données.
+     *
+     * @param characterId l'ID du personnage à rechercher
+     * @return un objet GameCharacter correspondant à l'ID, ou null si aucun personnage n'est trouvé
+     * @throws RuntimeException si une erreur survient lors de l'exécution de la requête SQL
+     */
     public GameCharacter getCharacterById(int characterId) {
         String sql = "SELECT * FROM `character` WHERE idCharacter = ?";
 
@@ -167,6 +100,13 @@ public class CharacterService {
         }
     }
 
+    /**
+     * Ajoute un nouveau personnage dans la base de données et met à jour son identifiant auto-généré et l'id de son inventaire.
+     *
+     * @param character le personnage à ajouter
+     * @return l'objet {@code GameCharacter} inséré, avec son nouvel ID et l'id de son inventaire mis à jour
+     * @throws RuntimeException en cas d'erreur lors de l'insertion en base de données
+     */
     public GameCharacter addCharacter(GameCharacter character) {
         if (characterExistsByName(character.getName())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Le nom est déjà utilisé");
@@ -203,6 +143,14 @@ public class CharacterService {
         return character;
     }
 
+    /**
+     * Met à jour le nom d'un personnage en base de données
+     *
+     * @param characterId l'ID du personnage à modifier
+     * @param name le nouveau nom du personnage
+     * @return un booléen indiquant si le changement a été effectué ou non(en cas de nom déjà utilisé)
+     * @throws RuntimeException si le personnage à modifier n'existe pas
+     */
     public Boolean updateCharacterName(int characterId, String name) throws IllegalArgumentException {
         if(characterExistsByName(name)) throw new IllegalArgumentException("Le nom est déjà utilisé");
         String sql = "UPDATE `character` SET name = ? WHERE idCharacter = ?";
@@ -217,6 +165,12 @@ public class CharacterService {
         }
     }
 
+    /**
+     * Désactive le personnage dont l'ID est spécifié en le supprimant dans la base de données.
+     *
+     * @param characterId L'ID du personnage à supprimer
+     * @throws RuntimeException en cas d'erreur SQL ou si le personnage n'a pas pu être supprimé.
+     */
     public void deleteCharacterById(int characterId) {
         String sql = "DELETE FROM `character` WHERE idCharacter = ?";
         try(Connection conn = dataSource.getConnection();
@@ -228,6 +182,14 @@ public class CharacterService {
         }
     }
 
+    /**
+     * Vérifie que le personnage dont l'id est spécifié appartient à l'utilisateur dont l'id est spécifier .
+     *
+     * @param userId l'ID de l'utilisateur
+     * @param characterId l'ID du personnage
+     * @return un booléen indiquant si le personnage appartient à l'utilisateur
+     * @throws RuntimeException si le personnage à rechercher n'existe pas
+     */
     public boolean userOwnsCharacter(int userId, int characterId) {
         String sql = "SELECT COUNT(*) FROM `character` WHERE idCharacter = ? AND idUser = ?";
         try (Connection conn = dataSource.getConnection();
@@ -245,7 +207,13 @@ public class CharacterService {
         return false;
     }
 
-
+    /**
+     * Vérifie que le personnage dont le nom est spécifié existe en base de données
+     *
+     * @param characterName le nom du personnage
+     * @return un booléen indiquant si le personnage existe
+     * @throws RuntimeException si le personnage à rechercher n'existe pas
+     */
     public boolean characterExistsByName(String characterName) {
         String sql = "SELECT COUNT(*) FROM `character` WHERE name = ?";
         try (Connection conn = dataSource.getConnection();
@@ -262,6 +230,13 @@ public class CharacterService {
         return false;
     }
 
+    /**
+     * Vérifie que le personnage dont l'ID est spécifié existe en base de données
+     *
+     * @param characterId l'ID' du personnage
+     * @return un booléen indiquant si le personnage existe
+     * @throws RuntimeException si le personnage à rechercher n'existe pas
+     */
     public boolean characterExistsById(int characterId) {
         String sql = "SELECT COUNT(*) FROM `character` WHERE idCharacter = ?";
         try (Connection conn = dataSource.getConnection();
