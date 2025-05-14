@@ -6,9 +6,7 @@ import be.helha.poo3.serverpoo.exceptions.InventoryIOException;
 import be.helha.poo3.serverpoo.models.Inventory;
 import be.helha.poo3.serverpoo.models.Item;
 import be.helha.poo3.serverpoo.utils.GsonObjectIdAdapted;
-import be.helha.poo3.serverpoo.utils.ObjectIdAdapter;
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Updates;
@@ -24,6 +22,17 @@ import java.util.List;
 
 @Primary
 @Service
+/**
+ * Service principal pour la gestion des inventaires dans le jeu.
+ *
+ * Cette classe assure toutes les opérations CRUD sur les inventaires MongoDB,
+ * y compris la gestion des emplacements d'équipement (main, armor, second),
+ * la consommation d'objets, l'ajout et la suppression d'items, ainsi que
+ * l'adaptation dynamique des objets à leurs classes spécifiques via le système de génération.
+ *
+ * Le service repose sur MongoDB pour le stockage, Gson pour la (dé)sérialisation,
+ * et des classes utilitaires pour le chargement dynamique d'objets.
+ */
 public class InventoryService {
 
     private final ConnexionMongoDB connexionMongoDB;
@@ -47,16 +56,26 @@ public class InventoryService {
      * @return l'objet Inventory nouvellement créé, avec son identifiant MongoDB (_id) défini.
      */
     public Inventory createInventory() {
-
+        // Créer l'inventaire avec un ObjectId déjà initialisé
         Inventory inventory = new Inventory();
 
-        Gson gson = new GsonBuilder()
-                .registerTypeAdapter(ObjectId.class, new ObjectIdAdapter())
-                .create();
+        // Sérialiser en JSON avec ObjectIdAdapter
+        Gson gson = GsonObjectIdAdapted.getGson();
+        String json = gson.toJson(inventory);
+        Document doc = Document.parse(json);
 
-        Document doc = Document.parse(gson.toJson(inventory));
+        // Forcer le champ _id à rester un ObjectId (pas une String)
+        doc.put("_id", inventory.getId());
+
+        // S'assurer que le champ items est un tableau (pas un objet)
+        if (!doc.containsKey("items") || !(doc.get("items") instanceof List)) {
+            doc.put("items", new ArrayList<>());
+        }
+
+        // Insertion dans MongoDB
         inventoryCollection.insertOne(doc);
 
+        // Retourner l'inventaire créé
         return inventory;
     }
 
@@ -73,24 +92,27 @@ public class InventoryService {
         if (doc == null) return null;
 
         Gson gson = GsonObjectIdAdapted.getGson();
-        Inventory inventory = gson.fromJson(doc.toJson(), Inventory.class);
+
+        Inventory inventory = new Inventory();
         inventory.setId(id);
 
         // Reconstruction dynamique des items
         List<Item> realItems = new ArrayList<>();
         List<Document> itemDocs = (List<Document>) doc.get("items");
 
-        for (Document itemDoc : itemDocs) {
-            String type = itemDoc.getString("type");
-            Class<?> clazz = DynamicClassGenerator.getClassByName(type);
+        if (itemDocs != null) {
+            for (Document itemDoc : itemDocs) {
+                String type = itemDoc.getString("type");
+                Class<?> clazz = DynamicClassGenerator.getClassByName(type);
 
-            if (clazz != null) {
-                Object itemObj = gson.fromJson(itemDoc.toJson(), clazz);
-                if (itemObj instanceof Item item) {
-                    realItems.add(item);
+                if (clazz != null) {
+                    Object itemObj = gson.fromJson(itemDoc.toJson(), clazz);
+                    if (itemObj instanceof Item item) {
+                        realItems.add(item);
+                    }
+                } else {
+                    realItems.add(gson.fromJson(itemDoc.toJson(), Item.class));
                 }
-            } else {
-                realItems.add(gson.fromJson(itemDoc.toJson(), Item.class));
             }
         }
 
@@ -150,8 +172,11 @@ public class InventoryService {
 
     /**
      * Supprime un item spécifique d'un inventaire MongoDB, en le recherchant par son identifiant.
-     * Les items de l'inventaire sont désérialisés dynamiquement selon leur type avant suppression.
-     * Si l'item est trouvé et supprimé, l'inventaire est mis à jour dans la base de données.
+     * L'inventaire est récupéré depuis la base, et ses items sont désérialisés dynamiquement
+     * selon leur type à l'aide du système de classes générées. Si l'item est trouvé dans la liste,
+     * il est supprimé, et l'inventaire mis à jour dans la base de données.
+     *
+     * Aucun mapping complet de l'objet Inventory n'est effectué, seule la liste des items est manipulée.
      *
      * @param inventoryId l'identifiant MongoDB de l'inventaire
      * @param itemId l'identifiant de l'item à supprimer
@@ -163,7 +188,6 @@ public class InventoryService {
         if (inventoryDoc == null) return false;
 
         Gson gson = GsonObjectIdAdapted.getGson();
-        Inventory inventory = gson.fromJson(inventoryDoc.toJson(), Inventory.class);
 
         // Désérialiser correctement les items dynamiques
         List<Item> realItems = new ArrayList<>();
@@ -235,21 +259,26 @@ public class InventoryService {
     }
 
     /**
-     * Consomme un item dans un inventaire en décrémentant son champ "currentCapacity", s'il est présent.
-     * Si la capacité restante est de 1, l'item est supprimé de l'inventaire.
-     * L'item ciblé doit avoir un champ "currentCapacity" accessible et de type entier.
+     * Consomme un item dans un inventaire MongoDB, identifié par son ObjectId.
      *
-     * @param inventoryId l'identifiant de l'inventaire MongoDB
+     * L'item ciblé doit contenir un champ dynamique nommé "currentCapacity" :
+     *
+     *   - Si sa valeur est supérieure à 1, elle est décrémentée de 1
+     *   - Si elle vaut 1 ou moins, l'item est retiré de l'inventaire
+     *
+     * Les items sont reconstruits dynamiquement à partir de leur type avant traitement.
+     * L'inventaire est mis à jour en base si l'opération a modifié la liste.
+     *
+     * @param inventoryId l'identifiant MongoDB de l'inventaire
      * @param itemId l'identifiant de l'item à consommer
-     * @return true si l'item a été trouvé et mis à jour ou supprimé, false sinon
-     * @throws RuntimeException si le champ "currentCapacity" est absent ou inaccessible
+     * @return true si l'item a été consommé ou supprimé, false sinon (ex. item introuvable)
+     * @throws RuntimeException si le champ "currentCapacity" est manquant ou inaccessible
      */
     public boolean consumeItem(ObjectId inventoryId, ObjectId itemId) {
         Document inventoryDoc = inventoryCollection.find(Filters.eq("_id", inventoryId)).first();
         if (inventoryDoc == null) return false;
 
         Gson gson = GsonObjectIdAdapted.getGson();
-        Inventory inventory = gson.fromJson(inventoryDoc.toJson(), Inventory.class);
 
         List<Document> itemDocs = (List<Document>) inventoryDoc.get("items");
         List<Item> realItems = new ArrayList<>();
@@ -308,25 +337,36 @@ public class InventoryService {
     }
 
     /**
-     * Tente d'équiper un item d'un inventaire dans l'un des trois emplacements d'équipement (main, armor, second).
-     * L'item doit être présent dans l'inventaire et compatible avec le type d'emplacement.
-     * Si l'emplacement est déjà occupé, les deux items sont échangés.
+     * Équipe un item dans un des emplacements d'équipement (main, armor ou second)
+     * de l'inventaire spécifié.
      *
-     * @param inventoryId l'identifiant de l'inventaire
-     * @param slot le nom de l'emplacement ciblé (main, armor ou second)
-     * @param item l'objet à équiper, provenant de l'inventaire
-     * @throws InventoryIOException si l'inventaire est introuvable, le slot invalide ou l'item non compatible
+     * L'item doit être présent dans la liste des objets de l'inventaire (par son ID).
+     * Cette méthode effectue une vérification de type et de présence avant d’équiper.
+     * Si un autre item est déjà équipé à cet emplacement, il sera replacé dans l’inventaire.
+     *
+     * @param inventoryId l'identifiant MongoDB de l'inventaire
+     * @param slot le nom de l’emplacement ciblé (main, armor ou second)
+     * @param item un objet contenant uniquement l'ID de l'item à équiper
+     * @throws InventoryIOException si l'inventaire est introuvable, l'item absent ou le slot invalide
      */
     public void pushToSlot(ObjectId inventoryId, String slot, Item item) throws InventoryIOException {
         Inventory inv = getInventory(inventoryId);
         if (inv == null) throw new InventoryIOException("Inventaire introuvable", 2);
 
+        // Rechercher l’item réel dans l’inventaire (sécurité si le JSON est partiel)
+        Item realItem = inv.getItems().stream()
+                .filter(i -> i.getId().equals(item.getId()))
+                .findFirst()
+                .orElseThrow(() -> new InventoryIOException("L'item n'a pas été trouvé dans l'inventaire.", 2));
+
+        // Équiper selon le slot
         switch (slot.toLowerCase()) {
-            case "main" -> inv.pushToMainSlot(item.getId());
-            case "armor" -> inv.pushToArmorSlot(item.getId());
-            case "second" -> inv.pushToSecondSlot(item.getId());
+            case "main" -> inv.pushToMainSlot(realItem.getId());
+            case "armor" -> inv.pushToArmorSlot(realItem.getId());
+            case "second" -> inv.pushToSecondSlot(realItem.getId());
             default -> throw new InventoryIOException("Slot invalide", 99);
         }
+
         updateInventory(inv);
     }
 
@@ -343,12 +383,15 @@ public class InventoryService {
         Inventory inv = getInventory(inventoryId);
         if (inv == null) throw new InventoryIOException("Inventaire introuvable", 2);
 
+        if (slot == null) throw new InventoryIOException("Aucun slot spécifié", 99);
+
         switch (slot.toLowerCase()) {
             case "main" -> inv.pullFromMainSlot(force);
             case "armor" -> inv.pullFromArmorSlot(force);
             case "second" -> inv.pullFromSecondSlot(force);
             default -> throw new InventoryIOException("Slot invalide", 99);
         }
+
         updateInventory(inv);
     }
 
@@ -356,15 +399,24 @@ public class InventoryService {
      * Met à jour un document d'inventaire dans la base de données MongoDB
      * en remplaçant l'entrée existante par une nouvelle version sérialisée.
      *
+     * Le champ "_id" est explicitement réinjecté au bon format pour éviter les conflits
+     * liés à la conversion Gson (qui peut le transformer en String).
+     *
      * @param inv l'objet inventaire à sauvegarder dans la base
      */
     private void updateInventory(Inventory inv) {
+        // Sérialisation en JSON
         String json = gson.toJson(inv);
         Document doc = Document.parse(json);
-        System.out.println(gson.toJson(inv));
 
-        System.out.println(doc);
-        inventoryCollection.replaceOne(Filters.eq("_id", inv.getId()), doc);
+        // Forcer à nouveau le champ _id à être un ObjectId (évite l'erreur Mongo code 66)
+        doc.put("_id", inv.getId());
+
+        // Remplacement en base (équivalent PUT)
+        inventoryCollection.replaceOne(
+                Filters.eq("_id", inv.getId()),
+                doc
+        );
     }
 
     /**
