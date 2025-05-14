@@ -1,8 +1,11 @@
 package be.helha.poo3.serverpoo.services;
 
+import be.helha.poo3.serverpoo.exceptions.InventoryIOException;
 import be.helha.poo3.serverpoo.models.*;
+import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Primary;
+import org.springframework.data.mongodb.core.aggregation.ConditionalOperators;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -23,7 +26,7 @@ public class CharacterService {
     private InventoryService inventoryService;
 
     @Autowired
-    private DungeonMapService dungeonMapService;
+    private ItemLoaderService itemLoaderService;
 
     /**
      * Récupère une liste de personnages appartenant à l'utilisateur dont l'ID est spécifié dans la base de données.
@@ -107,13 +110,41 @@ public class CharacterService {
      * @return l'objet {@code GameCharacter} inséré, avec son nouvel ID et l'id de son inventaire mis à jour
      * @throws RuntimeException en cas d'erreur lors de l'insertion en base de données
      */
-    public GameCharacter addCharacter(GameCharacter character) {
+    public GameCharacter addCharacter(GameCharacter character,String classe) {
         if (characterExistsByName(character.getName())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Le nom est déjà utilisé");
         }
 
         Inventory inventory = inventoryService.createInventory();
         character.setInventoryId(inventory.getId().toString());
+        String weaponName;
+        String armorName;
+        Item weapon;
+        Item armor;
+
+        switch(classe){
+            case "mage":
+                weaponName = "Simple Staff";
+                armorName = "Simple Robe";
+                break;
+            case "warrior":
+                weaponName = "Basic Sword";
+                armorName = "Chainmail Armor";
+                break;
+            case "hunter":
+                weaponName = "Basic Bow";
+                armorName = "Rude Leather Armor";
+                break;
+            default:
+                throw new IllegalArgumentException("Class "+ classe + " does not exist");
+        }
+        weapon = itemLoaderService.findByName(weaponName);
+        armor = itemLoaderService.findByName(armorName);
+        if (weapon == null){
+            throw new RuntimeException(weaponName + " not found");
+        } else if (armor == null){
+            throw new RuntimeException(armorName + " not found");
+        }
 
         String sql = "INSERT INTO `character` (idUser, name, inventoryId, maxHP, currentHP, constitution, dexterity, strength) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 
@@ -139,6 +170,15 @@ public class CharacterService {
         } catch (SQLException e) {
             throw new RuntimeException("Erreur lors de l'insertion du personnage : "+e.getMessage(), e);
         }
+        weapon = inventoryService.addItemToInventory(inventory.getId(),weapon.getId());
+        armor = inventoryService.addItemToInventory(inventory.getId(),armor.getId());
+        try {
+            inventoryService.pushToSlot(inventory.getId(),"main",weapon);
+            inventoryService.pushToSlot(inventory.getId(),"armor",armor);
+        } catch (InventoryIOException e) {
+            throw new RuntimeException(e.getMessage());
+        }
+
 
         return character;
     }
