@@ -1,11 +1,11 @@
 package be.helha.poo3.services;
 
 import be.helha.poo3.models.CharacterDTO;
+import be.helha.poo3.models.CharacterWithPos;
 import be.helha.poo3.models.GameCharacter;
 import be.helha.poo3.utils.UserSession;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import org.apache.http.HttpRequest;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.*;
@@ -45,7 +45,6 @@ public class CharacterService {
             if (statusCode == 200) {
                 String responseBody = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
                 List<GameCharacter> liste = gson.fromJson(responseBody, listeType);
-                System.out.println(liste.toString());
                 return liste;
             } else if (statusCode == 401) {
                 throw new ClientProtocolException("Unauthorized");
@@ -69,7 +68,6 @@ public class CharacterService {
 
         try (CloseableHttpResponse response = (CloseableHttpResponse) client.execute(request)){
             int statusCode = response.getStatusLine().getStatusCode();
-            System.out.println(statusCode);
             if (statusCode  == 200) {
                 return true;
             }
@@ -85,7 +83,6 @@ public class CharacterService {
         request.addHeader("Authorization", "Bearer " + UserSession.getAccessToken());
         try (CloseableHttpResponse response = (CloseableHttpResponse) client.execute(request)){
             int statusCode = response.getStatusLine().getStatusCode();
-            System.out.println(statusCode);
             if (statusCode  == 200) {
                 return true;
             }
@@ -108,7 +105,38 @@ public class CharacterService {
         request.setEntity(entity);
         try (CloseableHttpResponse response = (CloseableHttpResponse) client.execute(request)){
             int statusCode = response.getStatusLine().getStatusCode();
-            System.out.println(statusCode);
+            if (statusCode  == 200) {
+                return true;
+            }
+        } catch (ClientProtocolException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public CharacterWithPos choiceCharacter(int characterId) throws IOException {
+        HttpPost request = new HttpPost(API_URL + "/choice/" + characterId);
+        request.addHeader("Content-Type", "application/json");
+        request.addHeader("Authorization", "Bearer " + UserSession.getAccessToken());
+        final Type type = new TypeToken<CharacterWithPos>() {}.getType();
+        try (CloseableHttpResponse response = (CloseableHttpResponse) client.execute(request)){
+            int statusCode = response.getStatusLine().getStatusCode();
+            if (statusCode  == 200) {
+                return gson.fromJson(EntityUtils.toString(response.getEntity()), type);
+            } else {
+                throw new RuntimeException(EntityUtils.toString(response.getEntity()));
+            }
+        } catch (ClientProtocolException e) {
+            throw new IOException(e.getMessage());
+        }
+    }
+
+    public boolean leaveGame() throws IOException {
+        HttpDelete request = new HttpDelete(API_URL + "/leave");
+        request.addHeader("Content-Type", "application/json");
+        request.addHeader("Authorization", "Bearer " + UserSession.getAccessToken());
+        try (CloseableHttpResponse response = (CloseableHttpResponse) client.execute(request)){
+            int statusCode = response.getStatusLine().getStatusCode();
             if (statusCode  == 200) {
                 return true;
             }

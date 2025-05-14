@@ -1,14 +1,9 @@
 package be.helha.poo3.utils;
 
-import be.helha.poo3.services.AuthService;
-import be.helha.poo3.views.LoginView;
-import be.helha.poo3.views.ProfileView;
 import com.googlecode.lanterna.TerminalSize;
 import com.googlecode.lanterna.gui2.*;
 import com.googlecode.lanterna.screen.Screen;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -30,7 +25,7 @@ public class LanternaUtils {
         menuWindow.setHints(List.of(Window.Hint.CENTERED));
 
         Panel mainPanel = new Panel(new LinearLayout(Direction.VERTICAL));
-        mainPanel.setPreferredSize(new TerminalSize(40, 12));
+        mainPanel.setPreferredSize(new TerminalSize(message.length(), 12));
         mainPanel.addComponent(new Label(message));
         mainPanel.addComponent(new EmptySpace());
 
@@ -62,7 +57,7 @@ public class LanternaUtils {
         BasicWindow menuWindow = new BasicWindow(title);
         menuWindow.setHints(List.of(Window.Hint.CENTERED));
         Panel mainPanel = new Panel(new LinearLayout(Direction.VERTICAL));
-        mainPanel.setPreferredSize(new TerminalSize(50, 5));
+        mainPanel.setPreferredSize(new TerminalSize(message.length(), 5));
         mainPanel.addComponent(new Label(message));
 
         Panel buttonsPanel = new Panel(new LinearLayout(Direction.HORIZONTAL));
@@ -78,7 +73,7 @@ public class LanternaUtils {
         BasicWindow menuWindow = new BasicWindow(title);
         menuWindow.setHints(List.of(Window.Hint.CENTERED));
         Panel mainPanel = new Panel(new LinearLayout(Direction.VERTICAL));
-        mainPanel.setPreferredSize(new TerminalSize(20, 5));
+        mainPanel.setPreferredSize(new TerminalSize(message.length(), 5));
         mainPanel.addComponent(new Label(message));
 
         TextBox input = new TextBox()

@@ -1,5 +1,6 @@
 package be.helha.poo3.views;
 
+import be.helha.poo3.models.CharacterWithPos;
 import be.helha.poo3.models.GameCharacter;
 import be.helha.poo3.services.CharacterService;
 import be.helha.poo3.utils.LanternaUtils;
@@ -19,11 +20,13 @@ public class CharacterDetailView {
     private final Screen screen;
     private final GameCharacter character;           // personnage courant
     private final CharacterService characterService = new CharacterService();
+    private final LanternaUtils lanternaUtils;
 
     public CharacterDetailView(WindowBasedTextGUI gui, Screen screen, GameCharacter character) {
         this.gui = gui;
         this.screen = screen;
         this.character = character;
+        this.lanternaUtils = new LanternaUtils(gui, screen);
     }
 
     public void mainWindow() {
@@ -69,7 +72,7 @@ public class CharacterDetailView {
         main.addComponent(new EmptySpace());
         Panel buttonPanel = new Panel(new LinearLayout(Direction.HORIZONTAL));
 
-
+        buttonPanel.addComponent(new Button("Jouer", this::choiceCharacter));
         buttonPanel.addComponent(new Button("Retour", window::close));
         buttonPanel.addComponent(new Button("Supprimer", ()->{
             this.deleteCharacter(window);
@@ -82,8 +85,7 @@ public class CharacterDetailView {
     }
 
     private void renameCharacter(BasicWindow currentWindow) {
-        LanternaUtils lu = new LanternaUtils(gui, screen);
-        String newName = lu.openPopupWithInput("Renommer", "Nouveau nom :");
+        String newName = lanternaUtils.openPopupWithInput("Renommer", "Nouveau nom :");
         if (newName == null || newName.isBlank() || newName.equals(character.getName())) {
             return;
         }
@@ -92,28 +94,43 @@ public class CharacterDetailView {
             if(characterService.updateCharacterName(character.getIdCharacter(), newName)){
                 character.setName(newName);
             } else {
-                lu.openMessagePopup("Erreur lors du changement de nom", "Erreur de renommer");
+                lanternaUtils.openMessagePopup("Erreur lors du changement de nom", "Erreur de renommer");
             }
 
             LanternaUtils.refresh(currentWindow,this::mainWindow);
         } catch (IOException e) {
-            lu.openMessagePopup("Erreur", "Impossible de renommer : " + e.getMessage());
+            lanternaUtils.openMessagePopup("Erreur", "Impossible de renommer : " + e.getMessage());
         }
     }
 
     private void deleteCharacter(BasicWindow currentWindow) {
-        LanternaUtils lu = new LanternaUtils(gui, screen);
-        boolean confirm = lu.openConfirmationPopup("Confirmation", "Voulez vous supprimer ce personnage?");
+        boolean confirm = lanternaUtils.openConfirmationPopup("Confirmation", "Voulez vous supprimer ce personnage?");
         if (confirm) {
             try {
                 if(characterService.deleteCharacter(this.character.getIdCharacter())){
                     currentWindow.close();
                 } else {
-                    lu.openMessagePopup("Erreur", "Impossible de supprimer ce personnage?");
+                    lanternaUtils.openMessagePopup("Erreur", "Impossible de supprimer ce personnage?");
                 }
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-        } else return;
+        }
+    }
+
+    private void choiceCharacter() {
+        try {
+            CharacterWithPos character = characterService.choiceCharacter(this.character.getIdCharacter());
+            if (character != null) {
+                System.out.println(character);
+                //new ExplorationView().show();
+            } else {
+                lanternaUtils.openMessagePopup("Erreur", "Impossible de récupérer le personnage");
+            }
+
+        } catch (IOException | RuntimeException e) {
+            lanternaUtils.openMessagePopup("Erreur", e.getMessage());
+        }
+
     }
 }
