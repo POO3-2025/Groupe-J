@@ -37,7 +37,7 @@ public class CharacterCreationView {
         main.addComponent(new Label("Nom :"));
         main.addComponent(nameBox);
 
-        List<String> classes = List.of("warrior","mage","hunter");
+        List<String> classes = List.of("Iop","Xelor","Cra");
         ComboBox<String> classBox = new ComboBox<>(classes);
         classBox.setSelectedIndex(0);
 
@@ -82,7 +82,22 @@ public class CharacterCreationView {
             int dex = parse(dexBox);
             int str = parse(strBox);
             int total = con + dex + str;
-            String classe = classBox.getSelectedItem();
+            String classe;
+            switch (classBox.getSelectedItem()){
+                case "Iop":
+                    classe = "warrior";
+                    break;
+                case "Xelor":
+                    classe = "mage";
+                    break;
+                case "Cra":
+                    classe = "hunter";
+                    break;
+                default:
+                    classe = "warrior";
+                    break;
+            }
+
 
             if (classe == null) {
                 lu.openMessagePopup("Erreur", "Sélectionnez une classe.");
