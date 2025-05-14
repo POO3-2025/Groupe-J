@@ -56,6 +56,7 @@ public class CharactersManagementView {
             this.openCharacterCreationView(menuWindow);
         }));
 
+
         menuWindow.setComponent(mainPanel);
 
         listBox.takeFocus();

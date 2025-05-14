@@ -72,7 +72,9 @@ public class CharacterDetailView {
         main.addComponent(new EmptySpace());
         Panel buttonPanel = new Panel(new LinearLayout(Direction.HORIZONTAL));
 
-        buttonPanel.addComponent(new Button("Jouer", this::choiceCharacter));
+        buttonPanel.addComponent(new Button("Jouer", ()->{
+            this.choiceCharacter(window);
+        }));
         buttonPanel.addComponent(new Button("Retour", window::close));
         buttonPanel.addComponent(new Button("Supprimer", ()->{
             this.deleteCharacter(window);
@@ -118,12 +120,13 @@ public class CharacterDetailView {
         }
     }
 
-    private void choiceCharacter() {
+    private void choiceCharacter(BasicWindow parent) {
         try {
             CharacterWithPos character = characterService.choiceCharacter(this.character.getIdCharacter());
             if (character != null) {
                 System.out.println(character);
-                //new ExplorationView().show();
+                parent.close();
+                new ExplorationView(gui,screen).show();
             } else {
                 lanternaUtils.openMessagePopup("Erreur", "Impossible de récupérer le personnage");
             }
