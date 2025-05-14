@@ -1,6 +1,7 @@
 package be.helha.poo3.serverpoo.utils;
 
 import be.helha.poo3.serverpoo.models.AllowedItemList;
+import be.helha.poo3.serverpoo.models.Item;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.File;
@@ -36,4 +37,17 @@ public class AllowedItemTypeUtil {
     public static List<String> getAllowedItemTypes() {
         return new ArrayList<>(allowedItemTypes);
     }
+
+    public static boolean isAllowedForMain(Item item) {
+        return item.getSubType() != null && item.getSubType().equalsIgnoreCase("Weapon");
+    }
+
+    public static boolean isAllowedForArmor(Item item) {
+        return item.getSubType() != null && item.getSubType().equalsIgnoreCase("Armor");
+    }
+
+    public static boolean isAllowedForSecond(Item item) {
+        return item.getSubType() != null && item.getSubType().equalsIgnoreCase("Secondary equipement");
+    }
+
 }

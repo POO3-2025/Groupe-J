@@ -33,11 +33,20 @@ public class MainMenuView {
         panel.addComponent(new Label("Bienvenue " + UserSession.getUsername() + " !"));
         panel.addComponent(new EmptySpace());
 
+
+        panel.addComponent(new Button("Voir mes personnages", () -> {
+            menuWindow.close();
+            new CharactersManagementView(gui, screen).mainWindow();
+        }));
+
         // Bouton "Voir Profil"
         panel.addComponent(new Button("Voir Profil", () -> {
             menuWindow.close();
             new ProfileView(gui, screen).show();
         }));
+
+
+
 
         panel.addComponent(new EmptySpace());
 
