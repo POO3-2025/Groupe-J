@@ -88,8 +88,7 @@ public class FightService {
                 int randomIndex = ThreadLocalRandom.current().nextInt(liste.size());
                 return liste.get(randomIndex);
             }
-        }
-
+        } else throw new RuntimeException("Fight is not finished");
     }
 
     public Item endPvmFight(int characterId, boolean get) throws InventoryIOException {

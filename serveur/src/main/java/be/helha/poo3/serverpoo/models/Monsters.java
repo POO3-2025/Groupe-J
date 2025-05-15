@@ -2,12 +2,12 @@ package be.helha.poo3.serverpoo.models;
 
 public enum Monsters {
 
-    slime("Slime", 20, 10, 10, Rarity.common),
-    skeleton("Skeleton", 40, 25, 20, Rarity.uncommon),
-    zombie("Zombie", 50, 20, 25, Rarity.uncommon),
-    goblin("Goblin", 60, 35, 20, Rarity.rare),
-    orc("Orc", 100, 50, 50, Rarity.epic),
-    undeadKnight("Undead Knight", 150, 70,100, Rarity.legendary);
+    slime("Slime", 20, 10, 10, Rarity.common, Temperament.passive),
+    skeleton("Skeleton", 40, 25, 20, Rarity.uncommon, Temperament.neutral),
+    zombie("Zombie", 50, 20, 25, Rarity.uncommon, Temperament.aggressive),
+    goblin("Goblin", 60, 35, 20, Rarity.rare, Temperament.neutral),
+    orc("Orc", 100, 50, 50, Rarity.epic, Temperament.aggressive),
+    undeadKnight("Undead Knight", 150, 70,100, Rarity.legendary, Temperament.aggressive);
 
 
 
