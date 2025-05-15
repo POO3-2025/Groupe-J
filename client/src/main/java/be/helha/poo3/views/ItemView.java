@@ -35,9 +35,9 @@ public class ItemView {
      * Affiche la vue de détail d’un item et permet d’effectuer des actions dessus.
      *
      * @param item            Les données de l’objet à afficher.
-     * @param inventoryWindow La fenêtre d’inventaire précédente.
+     * @param //inventoryWindow La fenêtre d’inventaire précédente.
      */
-    public void show(Map<String, Object> item, Window inventoryWindow) {
+    public void show(Map<String, Object> item/*, Window inventoryWindow*/) {
         BasicWindow itemWindow = new BasicWindow("Détail de l'item");
         itemWindow.setHints(List.of(Window.Hint.CENTERED));
 
@@ -52,8 +52,11 @@ public class ItemView {
         panel.addComponent(new Label("===== Statistiques ====="));
         addLabelIfExists(panel, "Dégâts", item.get("damage"));
         addLabelIfExists(panel, "Défense", item.get("defense"));
+        addLabelIfExists(panel, "Puissance", item.get("power"));
         addLabelIfExists(panel, "Capacité max.", item.get("capacity"));
         addLabelIfExists(panel, "Capacité actuelle", item.get("currentCapacity"));
+        addLabelIfExists(panel, "Effet", item.get("effect"));
+
 
         panel.addComponent(new EmptySpace());
 
@@ -75,7 +78,7 @@ public class ItemView {
                         if (cap <= 0) {
                             lanternaUtils.openMessagePopup("Info", "Objet consommé et épuisé !");
                             itemWindow.close();
-                            new InventoryView(gui, screen).show(new BasicWindow());
+                            new InventoryView(gui, screen).show(/*new BasicWindow()*/);
                             return;
                         } else {
                             item.put("currentCapacity", cap);
@@ -84,7 +87,7 @@ public class ItemView {
 
                     lanternaUtils.openMessagePopup("Succès", "Objet utilisé !");
                     itemWindow.close();
-                    show(item, inventoryWindow);
+                    show(item/*, inventoryWindow*/);
                 } else {
                     lanternaUtils.openMessagePopup("Erreur", "Échec de consommation de l'objet.");
                 }
@@ -101,7 +104,7 @@ public class ItemView {
                 if (success) {
                     lanternaUtils.openMessagePopup("Succès", "Objet supprimé.");
                     itemWindow.close();
-                    new InventoryView(gui, screen).show(new BasicWindow());
+                    new InventoryView(gui, screen).show(/*new BasicWindow()*/);
                 } else {
                     lanternaUtils.openMessagePopup("Erreur", "Échec de la suppression.");
                 }
@@ -116,7 +119,7 @@ public class ItemView {
 
                 String slot = determineSlot(subType);
                 if (slot == null) {
-                    lanternaUtils.openMessagePopup("Erreur", "Type non équipé : " + subType);
+                    lanternaUtils.openMessagePopup("Erreur", "Objet non équipable : " + subType);
                     return;
                 }
 
@@ -124,13 +127,13 @@ public class ItemView {
                 if (success) {
                     lanternaUtils.openMessagePopup("Succès", "Objet équipé dans le slot " + slot);
                     itemWindow.close();
-                    new InventoryView(gui, screen).show(inventoryWindow);
+                    new InventoryView(gui, screen).show(/*inventoryWindow*/);
                 } else {
                     lanternaUtils.openMessagePopup("Erreur", "Échec de l’équipement.");
                 }
             }));
 
-            panel.addComponent(new Button("Supprimer", () -> {
+            panel.addComponent(new Button("Jeter", () -> {
                 String itemId = (String) item.get("_id");
                 if (itemId == null) {
                     lanternaUtils.openMessagePopup("Erreur", "ID de l'objet manquant.");
@@ -141,7 +144,7 @@ public class ItemView {
                 if (success) {
                     lanternaUtils.openMessagePopup("Succès", "Objet supprimé.");
                     itemWindow.close();
-                    new InventoryView(gui, screen).show(new BasicWindow());
+                    new InventoryView(gui, screen).show(/*new BasicWindow()*/);
                 } else {
                     lanternaUtils.openMessagePopup("Erreur", "Échec de la suppression.");
                 }
@@ -152,11 +155,11 @@ public class ItemView {
 
         panel.addComponent(new Button("Retour", () -> {
             itemWindow.close();
-            new InventoryView(gui, screen).show(new BasicWindow());
+            new InventoryView(gui, screen).show(/*new BasicWindow()*/);
         }));
 
         itemWindow.setComponent(panel);
-        inventoryWindow.setVisible(false);
+        //inventoryWindow.setVisible(false);
         gui.addWindowAndWait(itemWindow);
     }
 

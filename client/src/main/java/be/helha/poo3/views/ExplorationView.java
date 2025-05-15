@@ -29,7 +29,7 @@ public class ExplorationView {
 
         mainPanel.addComponent(new Button("Voir l'inventaire", () -> {
             menuWindow.close(); // ✅ Fermer proprement
-            new InventoryView(gui, screen).show(menuWindow);
+            new InventoryView(gui, screen).show(/*menuWindow*/);
         }));
 
 

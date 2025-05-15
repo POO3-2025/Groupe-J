@@ -33,9 +33,9 @@ public class InventoryView {
     /**
      * Affiche la fenêtre d'inventaire avec les objets et les équipements du joueur.
      *
-     * @param previousWindow La fenêtre précédente à cacher pendant l'affichage.
+     * @param //previousWindow La fenêtre précédente à cacher pendant l'affichage.
      */
-    public void show(Window previousWindow) {
+    public void show(/*Window previousWindow*/) {
         BasicWindow inventoryWindow = new BasicWindow("Inventaire");
         inventoryWindow.setHints(List.of(Window.Hint.CENTERED));
 
@@ -52,7 +52,8 @@ public class InventoryView {
             for (Map<String, Object> item : items) {
                 String name = (String) item.getOrDefault("name", "Objet inconnu");
                 mainPanel.addComponent(new Button(name, () -> {
-                    new ItemView(gui, screen).show(item, inventoryWindow);
+                    inventoryWindow.close();
+                    new ItemView(gui, screen).show(item/*, inventoryWindow*/);
                 }));
             }
         }
@@ -78,7 +79,7 @@ public class InventoryView {
         }));
 
         inventoryWindow.setComponent(mainPanel);
-        previousWindow.setVisible(false);
+        //previousWindow.setVisible(false);
         gui.addWindowAndWait(inventoryWindow);
     }
 
@@ -99,7 +100,7 @@ public class InventoryView {
         if (success) {
             lanternaUtils.openMessagePopup("Succès", "L’objet a été retiré du slot " + slot + ".");
             inventoryWindow.close();
-            this.show(new BasicWindow()); // Recharge la vue avec une nouvelle instance
+            this.show(/*new BasicWindow()*/); // Recharge la vue avec une nouvelle instance
         } else {
             lanternaUtils.openMessagePopup("Erreur", "Le retrait de l’objet a échoué.");
         }
