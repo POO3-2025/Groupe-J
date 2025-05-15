@@ -155,6 +155,14 @@ public class Item {
         return extras;
     }
 
+    public int extractStatIfExist(String field) {
+        if (this.getAdditionalAttributes().contains(field)){
+            return this.getInt(field);
+        } else {
+            return 0;
+        }
+    }
+
     public Map<String, Object> getMap(){
         Map<String, Object> map = new HashMap<>();
         if (this.getId() != null) {

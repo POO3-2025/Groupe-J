@@ -39,5 +39,7 @@ public class Monster {
     public Rarity getRarity() {
         return type.getRarity();
     }
+
+    public void setCurrentHealth(int currentHealth) { this.currentHealth = currentHealth; }
 }
 
