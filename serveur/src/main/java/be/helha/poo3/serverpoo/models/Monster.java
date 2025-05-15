@@ -3,10 +3,12 @@ package be.helha.poo3.serverpoo.models;
 public class Monster {
     private Monsters type;
     private int currentHealth;
+    private Temperament temperament;
 
     public Monster(Monsters type) {
         this.type = type;
         this.currentHealth = type.getHealth();
+        this.temperament = type.getTemperament();
     }
 
     public boolean isAlive() {
@@ -41,5 +43,7 @@ public class Monster {
     }
 
     public void setCurrentHealth(int currentHealth) { this.currentHealth = currentHealth; }
+
+    public Temperament getTemperament() { return temperament; }
 }
 

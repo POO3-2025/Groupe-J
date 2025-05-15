@@ -1,14 +1,15 @@
-package be.helha.poo3.serverpoo.models;
+package be.helha.poo3.models;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum Monsters {
 
-    slime("Slime", 20, 10, 10, Rarity.common),
-    skeleton("Skeleton", 40, 25, 20, Rarity.uncommon),
-    zombie("Zombie", 50, 20, 25, Rarity.uncommon),
-    goblin("Goblin", 60, 35, 20, Rarity.rare),
-    orc("Orc", 100, 50, 50, Rarity.epic),
-    undeadKnight("Undead Knight", 150, 70,100, Rarity.legendary);
-
+    slime("Slime", 10, 5, 2, Rarity.common,Temperament.neutral),
+    skeleton("Skeleton", 15, 7, 4, Rarity.uncommon,Temperament.aggressive),
+    zombie("Zombie", 20, 5, 4, Rarity.uncommon,Temperament.aggressive),
+    goblin("Goblin", 30, 5, 1, Rarity.rare,Temperament.passive),
+    orc("Orc", 40, 10, 5, Rarity.epic,Temperament.neutral);
 
 
     private final String name;
@@ -33,4 +34,16 @@ public enum Monsters {
     public int getDefense() { return defense; }
     public Rarity getRarity() { return rarity; }
     public Temperament getTemperament() { return temperament; }
+
+
+    @JsonValue
+    public String toValue() {
+        return name();
+    }
+
+    @JsonCreator
+    public static Monsters fromValue(String value) {
+        return Monsters.valueOf(value);
+    }
 }
+
