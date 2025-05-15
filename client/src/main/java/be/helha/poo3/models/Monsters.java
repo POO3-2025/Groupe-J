@@ -5,11 +5,13 @@ import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum Monsters {
 
-    slime("Slime", 10, 5, 2, Rarity.common,Temperament.neutral),
-    skeleton("Skeleton", 15, 7, 4, Rarity.uncommon,Temperament.aggressive),
-    zombie("Zombie", 20, 5, 4, Rarity.uncommon,Temperament.aggressive),
-    goblin("Goblin", 30, 5, 1, Rarity.rare,Temperament.passive),
-    orc("Orc", 40, 10, 5, Rarity.epic,Temperament.neutral);
+
+    slime("Slime", 20, 10, 10, Rarity.common,Temperament.passive),
+    skeleton("Skeleton", 40, 25, 20, Rarity.uncommon,Temperament.aggressive),
+    zombie("Zombie", 50, 20, 25, Rarity.uncommon,Temperament.aggressive),
+    goblin("Goblin", 60, 35, 20, Rarity.rare,Temperament.neutral),
+    orc("Orc", 100, 50, 50, Rarity.epic,Temperament.neutral),
+    undeadKnight("Undead Knight", 150, 70,100, Rarity.legendary,Temperament.aggressive);
 
 
     private final String name;
