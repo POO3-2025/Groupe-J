@@ -18,6 +18,12 @@ public class Monster {
         currentHealth -= damageTaken;
     }
 
+    public Monsters getType(){ return type; }
+
+    public double getHealthPercentage() {
+        return (double) currentHealth / type.getHealth() *100;
+    }
+
     public String getName() {
         return type.getName();
     }
