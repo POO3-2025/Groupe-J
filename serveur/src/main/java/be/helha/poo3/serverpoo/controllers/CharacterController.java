@@ -1,6 +1,7 @@
 package be.helha.poo3.serverpoo.controllers;
 
 
+import be.helha.poo3.serverpoo.models.CharacterCreationDTO;
 import be.helha.poo3.serverpoo.models.CharacterWithPos;
 import be.helha.poo3.serverpoo.models.GameCharacter;
 import be.helha.poo3.serverpoo.services.CharacterService;
@@ -69,20 +70,17 @@ public class CharacterController {
     @PostMapping
     public ResponseEntity<?> addCharacter(
             @RequestHeader(value = "Authorization", required = false) String authHeader,
-            @RequestBody GameCharacter character) {
+            @RequestBody CharacterCreationDTO characterDTO) {
         if (authHeader == null || authHeader.isEmpty()) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Authorization header is missing");
         }
         String token = authHeader.startsWith("Bearer ") ? authHeader.substring(7) : authHeader;
 
         try {
-            if(character.getConstitution()+ character.getDexterity()+character.getStrength()>5) return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("le nombre de point attribué est suppérieur à 5");
+            if(characterDTO.getConstitution()+ characterDTO.getDexterity()+characterDTO.getStrength()>5) return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("le nombre de point attribué est suppérieur à 5");
             int tokenUserId = jwtUtils.getUserIdFromToken(token);
-
-            character.setIdUser(tokenUserId);
-            character.setCurrentHP(100);
-            character.setMaxHP(100);
-            character = characterService.addCharacter(character);
+            GameCharacter character = new GameCharacter(0,tokenUserId,characterDTO.getName(),null,100,100,characterDTO.getConstitution(),characterDTO.getDexterity(),characterDTO.getStrength());
+            character = characterService.addCharacter(character, characterDTO.getClasse());
             return ResponseEntity.ok(character);
 
         } catch (JwtException e) {

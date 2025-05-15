@@ -145,9 +145,10 @@ public class InventoryService {
      *
      * @param inventoryId l'identifiant MongoDB de l'inventaire cible
      * @param itemId l'identifiant de l'item modèle à cloner et ajouter
+     * @return l'objet {@code Item} cloné
      * @throws RuntimeException si aucun item avec l'identifiant donné n'est trouvé dans les modèles chargés
      */
-    public void addItemToInventory(ObjectId inventoryId, ObjectId itemId) {
+    public Item addItemToInventory(ObjectId inventoryId, ObjectId itemId) {
         // Trouver l’item d’origine via l’ItemLoaderService
         Item original = itemLoaderService.getLoadedItems().stream()
                 .filter(i -> itemId.equals(i.getId()))
@@ -168,6 +169,7 @@ public class InventoryService {
                 Filters.eq("_id", inventoryId),
                 Updates.push("items", itemDoc)
         );
+        return clone;
     }
 
     /**

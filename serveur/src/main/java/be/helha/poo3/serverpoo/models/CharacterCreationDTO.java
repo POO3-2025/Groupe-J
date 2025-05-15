@@ -1,13 +1,13 @@
-package be.helha.poo3.models;
+package be.helha.poo3.serverpoo.models;
 
-public class CharacterDTO {
+public class CharacterCreationDTO {
     String name;
     int constitution;
     int dexterity;
     int strength;
     String classe;
 
-    public CharacterDTO(String name, int constitution, int dexterity, int strength, String classe) {
+    public CharacterCreationDTO(String name, int constitution, int dexterity, int strength, String classe) {
         this.name = name;
         this.constitution = constitution;
         this.dexterity = dexterity;
@@ -41,3 +41,4 @@ public class CharacterDTO {
     }
     public void setClasse(String classe) {}
 }
+

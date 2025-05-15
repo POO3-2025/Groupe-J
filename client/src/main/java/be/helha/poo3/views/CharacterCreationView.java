@@ -37,6 +37,15 @@ public class CharacterCreationView {
         main.addComponent(new Label("Nom :"));
         main.addComponent(nameBox);
 
+        List<String> classes = List.of("Iop","Xelor","Cra");
+        ComboBox<String> classBox = new ComboBox<>(classes);
+        classBox.setSelectedIndex(0);
+
+
+        main.addComponent(new Label("Classe :"));
+        main.addComponent(classBox);
+
+
         TextBox conBox = numericBox();
         TextBox dexBox = numericBox();
         TextBox strBox = numericBox();
@@ -73,6 +82,27 @@ public class CharacterCreationView {
             int dex = parse(dexBox);
             int str = parse(strBox);
             int total = con + dex + str;
+            String classe;
+            switch (classBox.getSelectedItem()){
+                case "Iop":
+                    classe = "warrior";
+                    break;
+                case "Xelor":
+                    classe = "mage";
+                    break;
+                case "Cra":
+                    classe = "hunter";
+                    break;
+                default:
+                    classe = "warrior";
+                    break;
+            }
+
+
+            if (classe == null) {
+                lu.openMessagePopup("Erreur", "Sélectionnez une classe.");
+                return;
+            }
 
             if (name.isEmpty()) {
                 lu.openMessagePopup("Erreur", "Le nom ne peut pas être vide");
@@ -83,7 +113,7 @@ public class CharacterCreationView {
                 return;
             }
 
-            CharacterDTO dto = new CharacterDTO(name, con, dex, str);
+            CharacterDTO dto = new CharacterDTO(name, con, dex, str, classe);
             try {
                 if (characterService.addCharacter(dto)) {
                     lu.openMessagePopup("Succès", "Personnage créé !");

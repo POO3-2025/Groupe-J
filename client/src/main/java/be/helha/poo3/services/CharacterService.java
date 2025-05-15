@@ -108,6 +108,7 @@ public class CharacterService {
             if (statusCode  == 200) {
                 return true;
             }
+            System.out.println("Erreur API (" + statusCode + ") : " + json);
         } catch (ClientProtocolException e) {
             e.printStackTrace();
         }
