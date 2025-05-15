@@ -131,7 +131,7 @@ public class DungeonMapService {
         b.setExit(opposite, a);
     }
 
-    private Point move(Point pos, Room.Direction dir) {
+    Point move(Point pos, Room.Direction dir) {
         //modifie les coordonnées x et y en fonction de la direction que l'on prend
         switch (dir) {
             case NORTH: return new Point(pos.x, pos.y + 1);

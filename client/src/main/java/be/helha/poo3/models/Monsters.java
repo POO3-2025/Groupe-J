@@ -1,4 +1,7 @@
-package be.helha.poo3.serverpoo.models;
+package be.helha.poo3.models;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum Monsters {
 
@@ -31,4 +34,16 @@ public enum Monsters {
     public int getDefense() { return defense; }
     public Rarity getRarity() { return rarity; }
     public Temperament getTemperament() { return temperament; }
+
+
+    @JsonValue
+    public String toValue() {
+        return name();
+    }
+
+    @JsonCreator
+    public static Monsters fromValue(String value) {
+        return Monsters.valueOf(value);
+    }
 }
+
