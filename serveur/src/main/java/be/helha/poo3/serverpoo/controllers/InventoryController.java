@@ -373,4 +373,47 @@ public class InventoryController {
             return ResponseEntity.badRequest().body("Erreur : " + e.getMessage());
         }
     }
+
+    /*
+    /**
+     * Supprime un inventaire par son identifiant.
+     * L'utilisateur doit être authentifié via JWT.
+     *
+     * @param id l'identifiant MongoDB de l'inventaire à supprimer
+     * @param authHeader le token JWT dans l'en-tête Authorization
+     * @return 200 si supprimé, 404 si introuvable, 401 ou 403 selon le cas
+    @DeleteMapping("/{id}")
+    public ResponseEntity<String> deleteInventory(
+            @PathVariable String id,
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
+
+        if (authHeader == null || authHeader.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("L'en-tête Authorization est manquant.");
+        }
+
+        if (!ObjectId.isValid(id)) {
+            return ResponseEntity.badRequest().body("L'identifiant de l'inventaire est invalide.");
+        }
+
+        String token = authHeader.startsWith("Bearer ") ? authHeader.substring(7) : authHeader;
+
+        try {
+            jwtUtils.getUserIdFromToken(token); // vérification uniquement
+
+            ObjectId objectId = new ObjectId(id);
+            boolean deleted = inventoryService.deleteInventory(objectId);
+
+            if (!deleted) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Inventaire introuvable ou déjà supprimé.");
+            }
+
+            return ResponseEntity.ok("Inventaire supprimé.");
+
+        } catch (JwtException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token invalide : " + e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erreur : " + e.getMessage());
+        }
+    }
+    */
 }

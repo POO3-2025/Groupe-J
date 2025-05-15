@@ -444,4 +444,15 @@ public class InventoryService {
 
         return gson.fromJson(doc.toJson(), Item.class);
     }
+
+    /**
+     * Supprime un inventaire de la base de données MongoDB par son identifiant.
+     *
+     * @param id l'identifiant MongoDB de l'inventaire à supprimer
+     * @return true si la suppression a réussi, false si aucun inventaire n'a été supprimé
+     */
+    public boolean deleteInventory(ObjectId id) {
+        return inventoryCollection.deleteOne(Filters.eq("_id", id)).getDeletedCount() > 0;
+    }
+
 }
