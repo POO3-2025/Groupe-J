@@ -206,6 +206,27 @@ public class CharacterService {
     }
 
     /**
+     * Met à jour les points de vie d'un personnage en base de données
+     *
+     * @param characterId l'ID du personnage à modifier
+     * @param currentHP les points de vie du personnage
+     * @return un booléen indiquant si le changement a été effectué ou non
+     * @throws RuntimeException si le personnage à modifier n'existe pas
+     */
+    public boolean updateCurrentHP(int characterId, int currentHP) throws IllegalArgumentException {
+        String sql = "UPDATE `character` SET currentHP = ? WHERE idCharacter = ?";
+        try (Connection connection = dataSource.getConnection();
+            PreparedStatement statement = connection.prepareStatement(sql)){
+            statement.setInt(1, currentHP);
+            statement.setInt(2, characterId);
+            int rows = statement.executeUpdate();
+            return rows > 0;
+        } catch (SQLException e) {
+            throw new RuntimeException("Erreur lors du changement des points de vie "+ currentHP +": "+ e.getMessage(), e);
+        }
+    }
+
+    /**
      * Désactive le personnage dont l'ID est spécifié en le supprimant dans la base de données.
      *
      * @param characterId L'ID du personnage à supprimer

@@ -24,7 +24,7 @@ public class PVMFight {
         String monsterAction = getMonsterAction();
         if ((playerAction.equals("dodge") || playerAction.equals("block")) &&
                 monsterAction.equals("block")) {
-            return new PvmTurnResult(false, 0, 0, playerAction, monsterAction);
+            return new PvmTurnResult(false, this.player.getCurrentHP(), this.monster.getCurrentHealth(), 0, 0, playerAction, monsterAction);
         }
 
         int damageMonsterTake = 0;
@@ -34,7 +34,7 @@ public class PVMFight {
             int playerAttack = player.getDamage();
             int monsterDefense = monsterAction.equals("block")? monster.getType().getDefense() *2 : monster.getType().getDefense();
 
-            damageMonsterTake = calculateDamage((int) (playerAttack * (1+(player.getStrength()*0.03))), monsterDefense);
+            damageMonsterTake = Math.max(0, calculateDamage((int) (playerAttack * (1+(player.getStrength()*0.03))), monsterDefense));
             monster.setCurrentHealth(Math.max(0, monster.getCurrentHealth() - damageMonsterTake));
         }
 
@@ -56,14 +56,16 @@ public class PVMFight {
             }
 
             if (!dodged) {
-                damagePlayerTake = calculateDamage(monsterAttack, playerDefense);
+                damagePlayerTake = Math.max(0, calculateDamage(monsterAttack, playerDefense));
                 int newHp        = Math.max(0, player.getCurrentHP() - damagePlayerTake);
                 player.setCurrentHP(newHp);
             }
         }
         boolean fightEnd = player.getCurrentHP() <= 0 || monster.getCurrentHealth() <= 0;
 
-        return new PvmTurnResult(fightEnd, damageMonsterTake, damagePlayerTake, playerAction, monsterAction);
+        setFinished(fightEnd);
+
+        return new PvmTurnResult(fightEnd, this.player.getCurrentHP(), this.monster.getCurrentHealth(), damageMonsterTake, damagePlayerTake, playerAction, monsterAction);
 
 
     }
@@ -140,13 +142,17 @@ public class PVMFight {
 
     public class PvmTurnResult {
         private boolean fightEnd;
+        private int playerHealth;
+        private int monsterHealth;
         private int damageMonsterTake;
         private int damagePlayerTake;
         private String playerAction;
         private String monsterAction;
 
-        public PvmTurnResult(boolean fightEnd, int damageMonsterTake, int damagePlayerTake, String playerAction, String monsterAction) {
+        public PvmTurnResult(boolean fightEnd, int playerHealth, int monsterHealth, int damageMonsterTake, int damagePlayerTake, String playerAction, String monsterAction) {
             this.fightEnd = fightEnd;
+            this.playerHealth = playerHealth;
+            this.monsterHealth = monsterHealth;
             this.damageMonsterTake = damageMonsterTake;
             this.damagePlayerTake = damagePlayerTake;
             this.playerAction = playerAction;
@@ -160,6 +166,14 @@ public class PVMFight {
         public void setFightEnd(boolean fightEnd) {
             this.fightEnd = fightEnd;
         }
+
+        public int getPlayerHealth() { return this.playerHealth; }
+
+        public void setPlayerHealth(int playerHealth) { this.playerHealth = playerHealth; }
+
+        public int getMonsterHealth() { return this.monsterHealth; }
+
+        public void setMonsterHealth(int monsterHealth) { this.monsterHealth = monsterHealth; }
 
         public int getDamageMonsterTake() {
             return damageMonsterTake;

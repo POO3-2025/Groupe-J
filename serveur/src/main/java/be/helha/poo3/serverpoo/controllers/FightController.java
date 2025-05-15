@@ -3,6 +3,7 @@ package be.helha.poo3.serverpoo.controllers;
 
 import be.helha.poo3.serverpoo.exceptions.InventoryIOException;
 import be.helha.poo3.serverpoo.models.CharacterWithPos;
+import be.helha.poo3.serverpoo.models.PVMFight;
 import be.helha.poo3.serverpoo.services.FightService;
 import be.helha.poo3.serverpoo.services.InGameCharacterService;
 import be.helha.poo3.serverpoo.utils.JwtUtils;
@@ -24,6 +25,11 @@ public class FightController {
 
     @Autowired
     private FightService fightService;
+
+    @GetMapping(path = "/pvm")
+    public ResponseEntity<?> getPvm() {
+        return ResponseEntity.ok(fightService.getPvmFights());
+    }
 
 
     @PostMapping(path = "/pvm")
@@ -62,7 +68,8 @@ public class FightController {
                 if (character == null) {
                     return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Character not in game session");
                 }
-                return ResponseEntity.ok(fightService.playPvmTurn(character.getIdCharacter(), action));
+                PVMFight.PvmTurnResult result = fightService.playPvmTurn(character.getIdCharacter(), action);
+                return ResponseEntity.ok(result);
             }
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Action must be 'attack', 'dodge' or 'block'");
 
@@ -100,13 +107,14 @@ public class FightController {
         if (authHeader == null || authHeader.isEmpty()) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Authorization header is missing");
         }
+        System.out.println(action);
         if (action.equals("throw") || action.equals("get")){
             String token = authHeader.startsWith("Bearer ") ? authHeader.substring(7) : authHeader;
             try {
                 int tokenUserId = jwtUtils.getUserIdFromToken(token);
                 CharacterWithPos character = inGameCharacterService.getInGameCharacterByUserId(tokenUserId);
                 if (character == null) throw new RuntimeException("Character not in game session");
-                fightService.endPvmFight(character.getIdCharacter(),action.equals("get"));
+                return ResponseEntity.ok(fightService.endPvmFight(character.getIdCharacter(),action.equals("get")));
             } catch (JwtException e) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token invalide : " + e.getMessage());
             } catch (RuntimeException e) {

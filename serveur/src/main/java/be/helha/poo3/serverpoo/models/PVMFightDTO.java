@@ -1,6 +1,7 @@
 package be.helha.poo3.serverpoo.models;
 
 public class PVMFightDTO {
+    boolean endFight;
     int monsterHp;
     int monsterMaxHp;
     int playerHp;
@@ -10,7 +11,8 @@ public class PVMFightDTO {
     String playerName;
     String playerAction;
 
-    public PVMFightDTO(int monsterHp, int monsterMaxHp, int playerHp, int playerMaxHp, String monsterName, String monsterAction, String playerName, String playerAction) {
+    public PVMFightDTO(boolean endfight, int monsterHp, int monsterMaxHp, int playerHp, int playerMaxHp, String monsterName, String monsterAction, String playerName, String playerAction) {
+        this.endFight = endFight;
         this.monsterHp = monsterHp;
         this.monsterMaxHp = monsterMaxHp;
         this.playerHp = playerHp;
@@ -19,6 +21,10 @@ public class PVMFightDTO {
         this.monsterAction = monsterAction;
         this.playerName = playerName;
         this.playerAction = playerAction;
+    }
+
+    public boolean isEndFight() {
+        return endFight;
     }
 
     public int getMonsterHp() {

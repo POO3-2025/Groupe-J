@@ -28,9 +28,16 @@ public class FightService {
     @Autowired
     private InGameCharacterService inGameCharacterService;
 
+    @Autowired
+    private CharacterService characterService;
+
     private List<PVMFight> pvmFights = new ArrayList<>();
 
     //private List<PVPFight> pvpFights = new ArrayList<>();
+
+    public List<PVMFight> getPvmFights() {
+        return pvmFights;
+    }
 
     public PVMFight getPvmFight(String fightId) {
         ObjectId objectId = new ObjectId(fightId);
@@ -45,7 +52,16 @@ public class FightService {
         PVMFight pvmFight = GetPvmFightByCharacterId(characterId);
         if (pvmFight == null) throw new RuntimeException("Fight not found");
         if (pvmFight.isFinished()) throw new RuntimeException("Fight is finished");
-        return pvmFight.turn(action);
+        PVMFight.PvmTurnResult result = pvmFight.turn(action);
+        characterService.updateCurrentHP(characterId, result.getPlayerHealth());
+        inGameCharacterService.getCharacterFromGame(characterId).setCurrentHP(result.getPlayerHealth());
+        if(result.isFightEnd()){
+            if (result.getPlayerHealth()<= 0){
+                inGameCharacterService.removeCharacterFromGame(characterId);
+                characterService.deleteCharacterById(characterId);
+            }
+        }
+        return result;
     }
 
     public PVMFightDTO createPvmFight(int characterId) {
@@ -57,6 +73,7 @@ public class FightService {
         Room room = dungeonMapService.getRoomById(characterPosition.x + ":" + characterPosition.y);
         if (room == null) throw new RuntimeException("Room not found");
         if (room.getMonster() == null) throw new RuntimeException("Monster not found");
+        room.setHasMonster(false);
         
         Inventory inventory = inventoryService.getInventory(new ObjectId(character.getInventoryId()));
         if (inventory == null) throw new RuntimeException("Inventory not found");
@@ -64,14 +81,30 @@ public class FightService {
         Item mainSlot = inventory.getMainSlot();
         Item secondSlot = inventory.getSecondSlot();
         Item armorSlot = inventory.getArmorSlot();
-        int damage = mainSlot.extractStatIfExist("damage") + secondSlot.extractStatIfExist("damage") + armorSlot.extractStatIfExist("damage") + secondSlot.extractStatIfExist("power") + armorSlot.extractStatIfExist("power");
-        int defense = mainSlot.extractStatIfExist("defense") + secondSlot.extractStatIfExist("defense") + armorSlot.extractStatIfExist("defense");
-        int agility = mainSlot.extractStatIfExist("agility") + secondSlot.extractStatIfExist("agility") + armorSlot.extractStatIfExist("agility");
+        int damage = 0;
+        int defense = 0;
+        int agility = 0;
+        if (mainSlot != null){
+            damage += mainSlot.extractStatIfExist("damage") + mainSlot.extractStatIfExist("power");
+            defense += mainSlot.extractStatIfExist("defense");
+            agility += mainSlot.extractStatIfExist("agility");
+        }
+        if (secondSlot != null){
+            damage += secondSlot.extractStatIfExist("damage") + secondSlot.extractStatIfExist("power");
+            defense += secondSlot.extractStatIfExist("defense");
+            agility += secondSlot.extractStatIfExist("agility");
+        }
+        if (armorSlot != null){
+            damage += armorSlot.extractStatIfExist("damage") + armorSlot.extractStatIfExist("power");
+            defense += armorSlot.extractStatIfExist("defense");
+            agility += armorSlot.extractStatIfExist("agility");
+        }
 
         FightCharacter fightCharacter = new FightCharacter(character.getIdCharacter(), character.getName(), character.getMaxHP(), character.getCurrentHP(), character.getConstitution(), character.getDexterity(), character.getStrength(), damage, defense, agility );
         PVMFight fight = new PVMFight(fightCharacter, room.getMonster());
         pvmFights.add(fight);
-        return new PVMFightDTO(fight.getMonster().getCurrentHealth(),fight.getMonster().getType().getHealth(),fight.getPlayer().getCurrentHP(),fight.getPlayer().getMaxHP(),fight.getMonster().getName(),null,fight.getPlayer().getNom(),null);
+        room.setMonster(null);
+        return new PVMFightDTO(fight.isFinished(),fight.getMonster().getCurrentHealth(),fight.getMonster().getType().getHealth(),fight.getPlayer().getCurrentHP(),fight.getPlayer().getMaxHP(),fight.getMonster().getName(),null,fight.getPlayer().getNom(),null);
     }
 
     public Item getReward(int characterId){
@@ -99,9 +132,10 @@ public class FightService {
             if (character == null) throw new RuntimeException("Character not in session");
             Inventory inventory = inventoryService.getInventory(new ObjectId(character.getInventoryId()));
             if (inventory == null) throw new RuntimeException("Inventory not found");
-            if (inventory.getItems().size() > 9) throw new InventoryIOException("Too many items", 3);
+            if (inventory.getItems().size() > 9) throw new InventoryIOException("Too many items in inventory", 3);
             Item reward = getReward(characterId);
             pvmFights.remove(pvmFight);
+            inventoryService.addItemToInventory(inventory.getId(),reward.getId());
             return reward;
         } else throw new RuntimeException("Fight is not finished");
 
