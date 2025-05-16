@@ -56,6 +56,23 @@ public class CharacterController {
         }
     }
 
+    @GetMapping(path = "/myCharacter")
+    public ResponseEntity<?> getMyCharacter(@RequestHeader(value = "Authorization", required = false) String authHeader) {
+        System.out.println(authHeader);
+        if (authHeader == null || authHeader.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Authorization header is missing");
+        }
+        String token = authHeader.startsWith("Bearer ") ? authHeader.substring(7) : authHeader;
+        try {
+            int tokenUserId = jwtUtils.getUserIdFromToken(token);
+            return ResponseEntity.ok(inGameCharacterService.getInGameCharacterByUserId(tokenUserId));
+        } catch (JwtException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token invalide : " + e.getMessage());
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erreur lors de la mise à jour : " + e.getMessage());
+        }
+    }
+
     @GetMapping(path = "/lastCharacter/{id}")
     public ResponseEntity<?> getLastCharacter(@PathVariable int id) {
         try {
