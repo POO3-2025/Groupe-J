@@ -28,7 +28,7 @@ public class ExplorationView {
         Panel mainPanel = new Panel(new LinearLayout(Direction.VERTICAL));
 
         mainPanel.addComponent(new Button("Voir l'inventaire", () -> {
-            menuWindow.close(); // ✅ Fermer proprement
+            menuWindow.close(); // Fermer proprement
             new InventoryView(gui, screen).show(/*menuWindow*/);
         }));
 
