@@ -30,7 +30,6 @@ public class CharacterService {
     }
 
     public List<GameCharacter> getUserCharacter() throws IOException {
-        System.out.println("avant requête");
         String accessToken = UserSession.getAccessToken();
         if (accessToken == null) {
             throw new IllegalStateException("No access token found");
@@ -107,8 +106,9 @@ public class CharacterService {
             int statusCode = response.getStatusLine().getStatusCode();
             if (statusCode  == 200) {
                 return true;
+            } else {
+                throw new RuntimeException("Erreur API (" + statusCode + ") : " + EntityUtils.toString(response.getEntity()));
             }
-            System.out.println("Erreur API (" + statusCode + ") : " + json);
         } catch (ClientProtocolException e) {
             e.printStackTrace();
         }

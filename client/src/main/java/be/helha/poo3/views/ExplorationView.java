@@ -25,15 +25,23 @@ public class ExplorationView {
         this.lanternaUtils = new LanternaUtils(gui, screen);
     }
 
-    public void show() throws IOException{
+    public void show(){
         BasicWindow menuWindow = new BasicWindow("Exploration");
         menuWindow.setHints(List.of(Window.Hint.CENTERED));
         menuWindow.setTitle("Exploration");
 
         Panel mainPanel = new Panel(new LinearLayout(Direction.VERTICAL));
-
+        RoomDTOClient room;
         //affichage des différents boutons en fonction de la salle
-        RoomDTOClient room = explorationService.getCurrentRoom();
+        try {
+            room = explorationService.getCurrentRoom();
+        } catch (IOException e) {
+            lanternaUtils.openMessagePopup("Erreur", e.getMessage());
+            e.printStackTrace();
+            menuWindow.close();
+            return;
+        }
+
         Boolean hasChest = room.isHasChest() ;
         Boolean hasMonsters = room.isHasMonster();
         List<String> directions = room.getExits();
@@ -52,7 +60,9 @@ public class ExplorationView {
 
         if(hasMonsters){
             mainPanel.addComponent(new Button("Attquer le monstre", ()->{
-                new Label("ouille aie ça pique !");
+                menuWindow.close();
+                new PvMFightView(gui, screen).mainWindow(null);
+                show();
             }));
         }
 
@@ -94,12 +104,12 @@ public class ExplorationView {
         objectDetails.addComponent(new Label(item.getAdditionalAttributes().toString()));
 
         objectDetails.addComponent(new Button("Retour",() -> {
-            try {
+           // try {
                 parent.close(); // Ferme la fenêtre actuelle
                 this.show();    // Rouvre la vue principale
-            } catch (IOException e) {
+           /* } catch (IOException e) {
                 throw new RuntimeException(e);
-            }
+            }*/
         }));
 
         parent.setComponent(objectDetails);
