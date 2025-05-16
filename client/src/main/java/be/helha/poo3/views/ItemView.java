@@ -47,6 +47,7 @@ public class ItemView {
         addLabelIfExists(panel, "Type", item.get("type"));
         addLabelIfExists(panel, "Sous-type", item.get("subType"));
         addLabelIfExists(panel, "Rareté", item.get("rarity"));
+        addLabelIfExists(panel, "Capacité de soin", item.get("healCapacity"));
         addLabelIfExists(panel, "Description", item.get("description"));
 
         panel.addComponent(new Label("===== Statistiques ====="));
@@ -71,6 +72,16 @@ public class ItemView {
                 }
 
                 boolean success = inventoryService.consumeItem(itemId);
+                if (success) {
+                    Object heal = item.get("healCapacity");
+                    if (heal instanceof Number) {
+                        lanternaUtils.openMessagePopup("Potion utilisée", heal + " PV ont été restaurés.");
+                    } else {
+                        lanternaUtils.openMessagePopup("Objet utilisé", "L'objet a été consommé.");
+                    }
+                } else {
+                    lanternaUtils.openMessagePopup("Erreur", "L'objet n'a pas pu être consommé.");
+                }
                 if (success) {
                     Object raw = item.get("currentCapacity");
                     if (raw instanceof Number number) {
