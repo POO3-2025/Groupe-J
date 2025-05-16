@@ -1,6 +1,7 @@
 package be.helha.poo3.serverpoo.controllers;
 
 import be.helha.poo3.serverpoo.models.*;
+import be.helha.poo3.serverpoo.services.CharacterService;
 import be.helha.poo3.serverpoo.services.InGameCharacterService;
 import be.helha.poo3.serverpoo.services.InventoryService;
 import be.helha.poo3.serverpoo.utils.JwtUtils;
@@ -27,6 +28,9 @@ public class InventoryController {
 
     @Autowired
     private InGameCharacterService inGameCharacterService;
+
+    @Autowired
+    private CharacterService characterService;
 
     @Autowired
     private JwtUtils jwtUtils;
@@ -237,13 +241,9 @@ public class InventoryController {
     }
 
     /**
-     * Consomme un item dans l'inventaire du personnage actuellement en jeu.
-     * Si l'item possède un champ "currentCapacity", sa valeur est décrémentée.
-     * L'item est automatiquement supprimé s'il ne reste plus d'utilisations.
-     *
-     * @param itemId l'identifiant de l'item à consommer
-     * @param authHeader le token JWT dans l'en-tête Authorization
-     * @return 200 si consommé ou supprimé, 404 si introuvable, 401 si token invalide, 400 en cas d'erreur
+     * Consomme un objet de l'inventaire du joueur connecté.
+     * Si l'objet est une potion, soigne le personnage sans dépasser ses PV max.
+     * Retourne un message d'erreur si les PV sont déjà au maximum.
      */
     @PatchMapping("/items/{itemId}/consume")
     public ResponseEntity<String> consumeItem(
@@ -271,7 +271,8 @@ public class InventoryController {
             ObjectId inventoryId = new ObjectId(character.getInventoryId());
             ObjectId itemObjId = new ObjectId(itemId);
 
-            boolean success = inventoryService.consumeItem(inventoryId, itemObjId);
+            boolean success = inventoryService.consumeItem(inventoryId, itemObjId, character);
+            characterService.updateCurrentHP(character.getIdCharacter(), character.getCurrentHP());
 
             if (!success) {
                 return ResponseEntity.status(404).body("Objet non trouvé dans l’inventaire.");
@@ -282,10 +283,12 @@ public class InventoryController {
         } catch (JwtException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token invalide : " + e.getMessage());
         } catch (RuntimeException e) {
+            if ("La barre de vie est déjà pleine.".equals(e.getMessage())) {
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+            }
             return ResponseEntity.badRequest().body("Erreur : " + e.getMessage());
         }
     }
-
 
     /**
      * Équipe un item dans un des emplacements (main, armor ou second) de l'inventaire
