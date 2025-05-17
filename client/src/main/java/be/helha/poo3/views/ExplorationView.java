@@ -1,13 +1,21 @@
 package be.helha.poo3.views;
 
+import be.helha.poo3.models.CharacterDTO;
+import be.helha.poo3.models.CharacterWithPos;
 import be.helha.poo3.models.Item;
 import be.helha.poo3.models.RoomDTOClient;
 import be.helha.poo3.services.CharacterService;
 import be.helha.poo3.services.ExplorationService;
 import be.helha.poo3.utils.LanternaUtils;
+import com.googlecode.lanterna.TerminalSize;
 import com.googlecode.lanterna.gui2.*;
+import com.googlecode.lanterna.gui2.Button;
+import com.googlecode.lanterna.gui2.Label;
+import com.googlecode.lanterna.gui2.Panel;
+import com.googlecode.lanterna.gui2.Window;
 import com.googlecode.lanterna.screen.Screen;
 
+import java.awt.*;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -18,110 +26,168 @@ public class ExplorationView {
     private final CharacterService characterService = new CharacterService();
     private final LanternaUtils lanternaUtils;
     private final ExplorationService explorationService = new ExplorationService();
+    private final BasicWindow mainWindow = new BasicWindow("Exploration");
+    private CharacterWithPos character;
 
-    public ExplorationView(WindowBasedTextGUI gui, Screen screen) {
+    public ExplorationView(WindowBasedTextGUI gui, Screen screen, CharacterWithPos character) throws IOException{
         this.gui = gui;
         this.screen = screen;
+        this.character = character;
         this.lanternaUtils = new LanternaUtils(gui, screen);
     }
 
     public void show() throws IOException{
-        BasicWindow menuWindow = new BasicWindow("Exploration");
-        menuWindow.setHints(List.of(Window.Hint.CENTERED));
-        menuWindow.setTitle("Exploration");
+        mainWindow.setHints(List.of(Window.Hint.CENTERED));
+        mainWindow.setTitle("Exploration");
 
+        //initialise la vue pour la première fois
+        updateMainWindowContent();
+        gui.addWindowAndWait(mainWindow);
+    }
+
+    public void openChest() throws IOException {
+        Panel chestContent = new Panel(new LinearLayout(Direction.VERTICAL));
+
+        Item item = explorationService.openChest();
+
+        chestContent.addComponent(new Label("Le coffre contient un(e) : " + item.getName()));
+        chestContent.addComponent(new Button("Voir les détails", () -> {
+            lanternaUtils.openMessagePopup("Détails", "Description : " + item.getDescription() + "\nRareté : " + item.getRarity());
+        }));
+
+        chestContent.addComponent(new Button("Prendre l'objet", () -> {
+            try {
+                // Rafraîchit l'état de la salle courante
+                RoomDTOClient updatedRoom = explorationService.getCurrentRoom();
+
+                // Retourner à la vue principale avec l'état mis à jour
+                updateMainWindowContent();
+            } catch (IOException e) {
+                System.err.println("Erreur lors de la récupération: " + e.getMessage());
+                e.printStackTrace();
+                try {
+                    // En cas d'erreur, on essaye de revenir à la vue principale
+                    updateMainWindowContent();
+                } catch (IOException ex) {
+                    System.err.println("Erreur lors de la mise à jour après erreur: " + ex.getMessage());
+                }
+            }
+        }));
+
+        chestContent.addComponent(new Button("Retour", () -> {
+            try {
+                updateMainWindowContent();
+            } catch (IOException e) {
+                System.err.println("Erreur lors du retour: " + e.getMessage());
+                e.printStackTrace();
+            }
+        }));
+
+        mainWindow.setComponent(chestContent);
+        gui.updateScreen();
+    }
+
+    public void move(String direction) throws IOException {
+        System.out.println("Déplacement demandé vers: " + direction);
+        System.out.println("Position avant déplacement: " + this.character.getPosition());
+
+        RoomDTOClient room = explorationService.move(direction);
+
+        // Mise à jour du personnage après le déplacement
+        String position = room.getId();
+        String[] pos = position.split(":");
+        int x = Integer.parseInt(pos[0]);
+        int y = Integer.parseInt(pos[1]);
+        this.character = characterService.getInGameCharacter();
+        this.character.setPosition(new Point(x,y));
+
+        updateMainWindowContent();
+    }
+
+    public void leave() {
+        try {
+            if (characterService.leaveGame()) {
+                lanternaUtils.openMessagePopup("Information", "Sortie effectuée");
+            } else {
+                lanternaUtils.openMessagePopup("Information", "Sortie non effectuée");
+            }
+        } catch (IOException e) {
+            System.err.println("Erreur lors de la sortie: " + e.getMessage());
+            e.printStackTrace();
+        }
+        mainWindow.close();
+    }
+
+
+    //méthode mettant à jour l'affichage
+    private void updateMainWindowContent() throws IOException {
+        // Vider et reconstruire complètement le panel principal
         Panel mainPanel = new Panel(new LinearLayout(Direction.VERTICAL));
 
-        //affichage des différents boutons en fonction de la salle
+        // Récupérer l'état actuel de la salle
         RoomDTOClient room = explorationService.getCurrentRoom();
-        Boolean hasChest = room.isHasChest() ;
-        Boolean hasMonsters = room.isHasMonster();
-        List<String> directions = room.getExits();
+        System.out.println("Mise à jour de l'interface pour la salle: " + room.getId() +
+                ", coffre: " + room.isHasChest() +
+                ", monstre: " + room.isHasMonster());
 
-        new Label("Tu arrives dans une salle sombre, que fais-tu ?  ");
+        mainPanel.addComponent(new Label("Position actuelle : " + character.getPosition()));
+        mainPanel.addComponent(new Label("Tu arrives dans une salle sombre, que fais-tu ?"));
 
-        if(hasChest){
-            mainPanel.addComponent(new Button("Ouvrir le coffre", ()->{
+        // Ajout de boutons conditionnels selon l'état de la salle
+        if (room.isHasChest()) {
+            mainPanel.addComponent(new Button("Ouvrir le coffre", () -> {
                 try {
-                    this.openChest(menuWindow);
+                    openChest();
                 } catch (IOException e) {
-                    throw new RuntimeException(e);
+                    System.err.println("Erreur lors de l'ouverture du coffre: " + e.getMessage());
+                    e.printStackTrace();
                 }
             }));
         }
 
-        if(hasMonsters){
-            mainPanel.addComponent(new Button("Attquer le monstre", ()->{
-                new Label("ouille aie ça pique !");
+        if (room.isHasMonster()) {
+            mainPanel.addComponent(new Button("Attaquer le monstre", () -> {
+                lanternaUtils.openMessagePopup("Combat", "Ouille, ça pique !");
             }));
         }
 
-        mainPanel.addComponent(new Button("Quitter", ()->{
-            this.leave(menuWindow);
-        }));
-
-        menuWindow.setComponent(mainPanel);
-        gui.addWindowAndWait(menuWindow);
-    }
-
-    public void openChest(BasicWindow parent) throws IOException {
-        Panel ChestContent = new Panel(new LinearLayout(Direction.VERTICAL));
-
-        Item item = explorationService.openChest();
-
-        Panel chestContent = new Panel(new LinearLayout(Direction.VERTICAL));
-
-        chestContent.addComponent(new Label("Le coffre contient un(e) : "+item.getName()));
-        chestContent.addComponent(new Button("Voir les détails",()->{
-                    try {
-                        this.showObjectDetails(parent,item);
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                })
-        );
-
-        parent.setComponent(chestContent);
-        gui.addWindowAndWait(parent);
-
-    }
-
-    public void showObjectDetails(BasicWindow parent,Item item) throws IOException {
-        Panel objectDetails = new Panel(new LinearLayout(Direction.VERTICAL));
-        objectDetails.addComponent(new Label(item.getDescription()));
-        objectDetails.addComponent(new Label(item.getType()));
-        objectDetails.addComponent(new Label(item.getRarity().toString()));
-        objectDetails.addComponent(new Label(item.getAdditionalAttributes().toString()));
-
-        objectDetails.addComponent(new Button("Retour",() -> {
-            try {
-                parent.close(); // Ferme la fenêtre actuelle
-                this.show();    // Rouvre la vue principale
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+        for (String direction : room.getExits()) {
+            String buttonText;
+            switch (direction.toLowerCase()) {
+                case "north":
+                    buttonText = "Aller au nord";
+                    break;
+                case "south":
+                    buttonText = "Aller au sud";
+                    break;
+                case "east":
+                    buttonText = "Aller à l'est";
+                    break;
+                case "west":
+                    buttonText = "Aller à l'ouest";
+                    break;
+                default:
+                    buttonText = "Aller " + direction;
+                    break;
             }
-        }));
 
-        parent.setComponent(objectDetails);
-        gui.addWindowAndWait(parent);
-    }
-
-    public void goBack(BasicWindow parent) throws IOException {
-
-    }
-
-    public void leave(BasicWindow parent){
-        LanternaUtils lanternaUtils = new LanternaUtils(gui, screen);
-        try {
-            if(characterService.leaveGame()){
-                lanternaUtils.openMessagePopup("Information","Sortie effectuée");
-            } else {
-                lanternaUtils.openMessagePopup("Information","Sortie non effectuée");
-            }
-        } catch (IOException e) {
-            lanternaUtils.openMessagePopup("Error", e.getMessage());
+            final String dir = direction;
+            mainPanel.addComponent(new Button(buttonText, () -> {
+                try {
+                    move(dir);
+                } catch (IOException e) {
+                    System.err.println("Erreur lors du déplacement: " + e.getMessage());
+                    e.printStackTrace();
+                }
+            }));
         }
-        parent.close();
 
+        mainPanel.addComponent(new Button("Quitter", this::leave));
+
+        // Met à jour la fenêtre principale avec le nouveau panel
+        mainWindow.setComponent(mainPanel);
+
+        // Force la mise à jour de l'écran
+        gui.updateScreen();
     }
 }

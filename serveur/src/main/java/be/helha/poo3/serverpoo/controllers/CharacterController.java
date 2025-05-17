@@ -77,7 +77,6 @@ public class CharacterController {
     public ResponseEntity<?> getLastCharacter(@PathVariable int id) {
         try {
             return ResponseEntity.ok(inGameCharacterService.getLastCharacter(id));
-
         } catch (RuntimeException e){
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }

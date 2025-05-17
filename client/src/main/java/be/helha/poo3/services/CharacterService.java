@@ -59,7 +59,7 @@ public class CharacterService {
     }
 
     public CharacterWithPos getInGameCharacter() throws IOException {
-        HttpPost request = new HttpPost(API_URL + "/myCharacter");
+        HttpGet request = new HttpGet(API_URL + "/myCharacter");
         request.addHeader("Content-Type", "application/json");
         request.addHeader("Authorization", "Bearer " + UserSession.getAccessToken());
         try (CloseableHttpResponse response = (CloseableHttpResponse) client.execute(request)){

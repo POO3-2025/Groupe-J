@@ -29,21 +29,29 @@ public class ExplorationService {
     }
 
     public Room move(CharacterWithPos character, String direction) {
-        Point position = character.getPosition();;
+        Point position = character.getPosition();
         Room currentRoom = dungeonMapService.getRoomById(position.x + ":" + position.y);
         if (currentRoom == null) {
             currentRoom = dungeonMapService.getStartRoom();
         }
-            Room.Direction dir = Room.Direction.valueOf(direction.toUpperCase());
-            Room nextRoom = currentRoom.getExit(dir);
-            if (nextRoom != null) {
-                //utiliser la méthode pour mettre à jour la position d'un personnage en fct de l'id
-                return nextRoom;
-            } else {
-                // Pas de sortie dans cette direction → reste dans la même salle
-                return null;
+
+        Room.Direction dir = Room.Direction.valueOf(direction.toUpperCase());
+        Room nextRoom = currentRoom.getExit(dir);
+
+        if (nextRoom != null) {
+            // Met à jour la position du personnage
+            switch (dir) {
+                case NORTH -> character.setPosition(new Point(position.x, position.y + 1));
+                case SOUTH -> character.setPosition(new Point(position.x, position.y - 1));
+                case EAST  -> character.setPosition(new Point(position.x + 1, position.y));
+                case WEST  -> character.setPosition(new Point(position.x - 1, position.y));
             }
+            return nextRoom;
+        } else {
+            return null;
+        }
     }
+
 
     public Item openChest(CharacterWithPos character) {
         Point position = character.getPosition();
@@ -67,7 +75,6 @@ public class ExplorationService {
                 throw new IllegalArgumentException("L'ID d'inventaire n'est pas un ObjectId valide.");
             }
             ObjectId inventoryID = new ObjectId(character.getInventoryId());
-            System.out.println("inventaire : " + inventoryID + " item : " + item.getId());
             inventoryService.addItemToInventory(inventoryID,item.getId());
             room.setChest(null);
             return true;

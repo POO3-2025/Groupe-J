@@ -179,7 +179,6 @@ public class CharacterService {
             throw new RuntimeException(e.getMessage());
         }
 
-
         return character;
     }
 
