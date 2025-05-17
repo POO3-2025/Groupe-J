@@ -39,6 +39,7 @@
     "Type": "Potion",
     "Capacity": 10,
     "CurrentCapacity": 10,
+    "HealCapacity" : 20,
     "Rarity": "common",
     "Description": "A basic healing potion",
     "SubType": "Consumable"
