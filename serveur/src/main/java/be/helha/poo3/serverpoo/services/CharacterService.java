@@ -292,4 +292,21 @@ public class CharacterService {
         }
         return false;
     }
+
+    /**
+     * Met à jour les points de vie actuels d’un personnage en base de données.
+     */
+    public void updateCurrentHP(int characterId, int currentHP) {
+        String sql = "UPDATE `character` SET currentHP = ? WHERE idCharacter = ?";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, currentHP);
+            stmt.setInt(2, characterId);
+            stmt.executeUpdate();
+
+        } catch (SQLException e) {
+            throw new RuntimeException("Erreur lors de la mise à jour des HP : " + e.getMessage(), e);
+        }
+    }
 }

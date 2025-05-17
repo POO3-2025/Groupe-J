@@ -26,6 +26,13 @@ public class ExplorationView {
         menuWindow.setTitle("Exploration");
 
         Panel mainPanel = new Panel(new LinearLayout(Direction.VERTICAL));
+
+        mainPanel.addComponent(new Button("Voir l'inventaire", () -> {
+            menuWindow.close(); // Fermer proprement
+            new InventoryView(gui, screen).show(/*menuWindow*/);
+        }));
+
+
         mainPanel.addComponent(new Button("Quitter", ()->{
             this.leave(menuWindow);
         }));

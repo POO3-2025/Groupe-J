@@ -3,8 +3,10 @@ package be.helha.poo3.serverpoo.services;
 import be.helha.poo3.serverpoo.components.ConnexionMongoDB;
 import be.helha.poo3.serverpoo.components.DynamicClassGenerator;
 import be.helha.poo3.serverpoo.exceptions.InventoryIOException;
+import be.helha.poo3.serverpoo.models.CharacterWithPos;
 import be.helha.poo3.serverpoo.models.Inventory;
 import be.helha.poo3.serverpoo.models.Item;
+import be.helha.poo3.serverpoo.utils.CharacterHealingHelper;
 import be.helha.poo3.serverpoo.utils.GsonObjectIdAdapted;
 import com.google.gson.Gson;
 import com.mongodb.client.MongoCollection;
@@ -12,6 +14,7 @@ import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Updates;
 import org.bson.Document;
 import org.bson.types.ObjectId;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 
@@ -261,27 +264,16 @@ public class InventoryService {
     }
 
     /**
-     * Consomme un item dans un inventaire MongoDB, identifié par son ObjectId.
+     * Consomme un objet de l'inventaire donné. Si c'est une potion, soigne le personnage.
+     * Met à jour ou retire l'objet selon sa capacité restante.
      *
-     * L'item ciblé doit contenir un champ dynamique nommé "currentCapacity" :
-     *
-     *   - Si sa valeur est supérieure à 1, elle est décrémentée de 1
-     *   - Si elle vaut 1 ou moins, l'item est retiré de l'inventaire
-     *
-     * Les items sont reconstruits dynamiquement à partir de leur type avant traitement.
-     * L'inventaire est mis à jour en base si l'opération a modifié la liste.
-     *
-     * @param inventoryId l'identifiant MongoDB de l'inventaire
-     * @param itemId l'identifiant de l'item à consommer
-     * @return true si l'item a été consommé ou supprimé, false sinon (ex. item introuvable)
-     * @throws RuntimeException si le champ "currentCapacity" est manquant ou inaccessible
+     * @return true si l'objet a été consommé, false sinon
      */
-    public boolean consumeItem(ObjectId inventoryId, ObjectId itemId) {
+    public boolean consumeItem(ObjectId inventoryId, ObjectId itemId, CharacterWithPos character) {
         Document inventoryDoc = inventoryCollection.find(Filters.eq("_id", inventoryId)).first();
         if (inventoryDoc == null) return false;
 
         Gson gson = GsonObjectIdAdapted.getGson();
-
         List<Document> itemDocs = (List<Document>) inventoryDoc.get("items");
         List<Item> realItems = new ArrayList<>();
 
@@ -301,13 +293,30 @@ public class InventoryService {
             Item item = iterator.next();
             if (itemId.equals(item.getId())) {
                 try {
-                    Field field = item.getClass().getDeclaredField("currentCapacity");
-                    field.setAccessible(true);
+                    // Tente de soigner le personnage si l'item a un champ healCapacity
+                    Field healField = null;
+                    int healAmount = 0;
 
-                    int value = (int) field.get(item);
+                    try {
+                        healField = item.getClass().getDeclaredField("healCapacity");
+                        healField.setAccessible(true);
+                        healAmount = (int) healField.get(item);
+
+                        // Soigne le personnage
+                        CharacterHealingHelper.heal(character, healAmount);
+                        //characterService.updateCurrentHP(character.getIdCharacter(), character.getCurrentHP());
+
+                    } catch (NoSuchFieldException ignore) {
+                        // L'objet n'a pas de healCapacity => ce n’est pas une potion => continuer normalement
+                    }
+
+                    // Gère la capacité ou suppression de l'objet
+                    Field capField = item.getClass().getDeclaredField("currentCapacity");
+                    capField.setAccessible(true);
+                    int value = (int) capField.get(item);
 
                     if (value > 1) {
-                        field.set(item, value - 1);
+                        capField.set(item, value - 1);
                     } else {
                         iterator.remove();
                     }
@@ -315,8 +324,9 @@ public class InventoryService {
                     updated = true;
                     break;
 
-                } catch (NoSuchFieldException e) {
-                    throw new RuntimeException("Cet objet n’est pas consommable (champ currentCapacity absent).");
+                } catch (IllegalStateException e) {
+                    // HP déjà au max, on considère que l'objet n'est pas consommé
+                    throw new RuntimeException(e.getMessage());
                 } catch (Exception e) {
                     throw new RuntimeException("Erreur lors de la consommation de l’objet", e);
                 }
@@ -443,5 +453,15 @@ public class InventoryService {
         }
 
         return gson.fromJson(doc.toJson(), Item.class);
+    }
+
+    /**
+     * Supprime un inventaire de la base de données MongoDB par son identifiant.
+     *
+     * @param id l'identifiant MongoDB de l'inventaire à supprimer
+     * @return true si la suppression a réussi, false si aucun inventaire n'a été supprimé
+     */
+    public boolean deleteInventory(ObjectId id) {
+        return inventoryCollection.deleteOne(Filters.eq("_id", id)).getDeletedCount() > 0;
     }
 }
