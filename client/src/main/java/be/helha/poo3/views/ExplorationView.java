@@ -29,12 +29,19 @@ public class ExplorationView {
     private final BasicWindow mainWindow = new BasicWindow("Exploration");
     private CharacterWithPos character;
 
+    public ExplorationView(WindowBasedTextGUI gui, Screen screen,CharacterWithPos character) throws IOException{
+        this.gui = gui;
+        this.screen = screen;
+        this.character = character;
+        this.lanternaUtils = new LanternaUtils(gui, screen);
+    }
+
     public ExplorationView(WindowBasedTextGUI gui, Screen screen) throws IOException{
         this.gui = gui;
         this.screen = screen;
-
         this.lanternaUtils = new LanternaUtils(gui, screen);
     }
+
 
     public void show() throws IOException{
         mainWindow.setHints(List.of(Window.Hint.CENTERED));
@@ -57,9 +64,11 @@ public class ExplorationView {
 
         chestContent.addComponent(new Button("Prendre l'objet", () -> {
             try {
-                // Rafraîchit l'état de la salle courante
-                RoomDTOClient updatedRoom = explorationService.getCurrentRoom();
-
+                boolean success = explorationService.getLootFromChest();
+                if(success){
+                    // Rafraîchit l'état de la salle courante
+                    RoomDTOClient updatedRoom = explorationService.getCurrentRoom();
+                }
                 // Retourner à la vue principale avec l'état mis à jour
                 updateMainWindowContent();
             } catch (IOException e) {
