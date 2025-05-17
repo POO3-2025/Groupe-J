@@ -1,0 +1,36 @@
+{
+  "databases": {
+    "mysql": {
+      "production": {
+        "host": "localhost",
+        "port": 3366,
+        "database": "poo3_server_mysql",
+        "user": "poo3_game",
+        "password": "game"
+      },
+      "test": {
+        "host": "localhost",
+        "port": 3306,
+        "database": "test_db",
+        "user": "root",
+        "password": "root"
+      }
+    },
+    "mongoDB": {
+      "production": {
+        "host": "localhost",
+        "port": 27017,
+        "database": "rpgdb",
+        "user": "game",
+        "password": "password"
+      },
+      "test": {
+        "host": "localhost",
+        "port": 27017,
+        "database": "rpgdb_test",
+        "user": "game",
+        "password": "password"
+      }
+    }
+  }
+}
