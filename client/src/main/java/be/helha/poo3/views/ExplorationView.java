@@ -29,10 +29,10 @@ public class ExplorationView {
     private final BasicWindow mainWindow = new BasicWindow("Exploration");
     private CharacterWithPos character;
 
-    public ExplorationView(WindowBasedTextGUI gui, Screen screen, CharacterWithPos character) throws IOException{
+    public ExplorationView(WindowBasedTextGUI gui, Screen screen) throws IOException{
         this.gui = gui;
         this.screen = screen;
-        this.character = character;
+
         this.lanternaUtils = new LanternaUtils(gui, screen);
     }
 

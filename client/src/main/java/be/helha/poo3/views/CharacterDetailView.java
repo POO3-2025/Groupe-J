@@ -126,7 +126,7 @@ public class CharacterDetailView {
             if (character != null) {
                 System.out.println(character);
                 parent.close();
-                new ExplorationView(gui,screen,character).show();
+                new ExplorationView(gui,screen).show();
             } else {
                 lanternaUtils.openMessagePopup("Erreur", "Impossible de récupérer le personnage");
             }

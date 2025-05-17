@@ -37,6 +37,7 @@ public class MainMenuView {
         panel.addComponent(new Button("Voir mes personnages", () -> {
             menuWindow.close();
             new CharactersManagementView(gui, screen).mainWindow();
+            show();
         }));
 
         // Bouton "Voir Profil"
