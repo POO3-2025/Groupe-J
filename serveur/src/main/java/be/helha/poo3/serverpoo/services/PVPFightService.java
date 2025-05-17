@@ -83,9 +83,11 @@ public class PVPFightService {
 
         PVPFight fight = getFightByPlayerId(playerId);
         if (fight == null) throw new RuntimeException("Can't find fight for player with id " + playerId);
-
-        fight.submitAction(playerId,action,(playerOneAction, playerTwoAction)-> resolvePvpTurn(fight,playerOneAction,playerTwoAction));
-
+        try {
+            fight.submitAction(playerId, action, (playerOneAction, playerTwoAction) -> resolvePvpTurn(fight, playerOneAction, playerTwoAction));
+        } catch (RuntimeException e) {
+            return null;
+        }
         PVPFight.PVPTurn turn = fight.getTurns().get(fight.getTurn().get() - 1);
         if (turn == null) return null;
         else {
@@ -234,7 +236,7 @@ public class PVPFightService {
             defense += armorSlot.extractStatIfExist("defense");
             agility += armorSlot.extractStatIfExist("agility");
         }
-        return new FightCharacter(character.getIdCharacter(), character.getName(), character.getMaxHP(), character.getCurrentHP(), character.getConstitution(), character.getDexterity(), character.getStrength(), damage, defense, agility );
+        return new FightCharacter(character.getIdCharacter(), character.getName(), character.getMaxHP(), character.getMaxHP(), character.getConstitution(), character.getDexterity(), character.getStrength(), damage, defense, agility );
     }
 
     private void ensurePlayerFree(int id) {

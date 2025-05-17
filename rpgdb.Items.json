@@ -1,0 +1,112 @@
+[{
+  "_id": {
+    "$oid": "67bf371dc5340129f6b02b2f"
+  },
+  "Name": "Basic Sword",
+  "Type": "Sword",
+  "Damage": 30,
+  "Rarity": "common",
+  "Description": "A simple sword",
+  "SubType": "Weapon"
+},
+{
+  "_id": {
+    "$oid": "67bf37a352cbac5cfae8c15a"
+  },
+  "Name": "Basic Shield",
+  "Type": "Shield",
+  "Defense": 20,
+  "Description": "A simple Shield",
+  "Rarity": "common",
+  "SubType": "Secondary equipement"
+},
+{
+  "_id": {
+    "$oid": "67bf3fffd1cf422617632cca"
+  },
+  "Name": "Upgraded Shield",
+  "Type": "Shield",
+  "Defense": 30,
+  "Description": "A more robust shield",
+  "Rarity": "uncommon",
+  "SubType": "Secondary equipement"
+},
+{
+  "_id": {
+    "$oid": "6808b3630039800c4db5b41e"
+  },
+  "Name": "Small potion",
+  "Type": "Potion",
+  "Capacity": 10,
+  "CurrentCapacity": 10,
+  "Rarity": "common",
+  "Description": "A basic healing potion",
+  "SubType": "Consumable"
+},
+{
+  "_id": {
+    "$oid": "6820fd3b810d460264ecc1fd"
+  },
+  "Name": "Steel forged armor",
+  "Type": "Heavy",
+  "Defense": 50,
+  "Description": "A good manufacturing forged armor",
+  "Rarity": "rare",
+  "SubType": "Armor"
+},
+{
+  "_id": {
+    "$oid": "6824d9593d2806ff2f434675"
+  },
+  "Name": "Simple Staff",
+  "Type": "Staff",
+  "Damage": 25,
+  "Description": "A simple Magic Staff",
+  "Rarity": "common",
+  "SubType": "Weapon"
+},
+{
+  "_id": {
+    "$oid": "6824da5a3d2806ff2f434676"
+  },
+  "Name": "Basic Bow",
+  "Type": "Bow",
+  "Damage": 30,
+  "Description": "A simple Bow",
+  "Rarity": "common",
+  "SubType": "Weapon"
+},
+{
+  "_id": {
+    "$oid": "6824df403d2806ff2f43467a"
+  },
+  "Name": "Simple Robe",
+  "Type": "Robe",
+  "Power": 30,
+  "Description": "A low quality robe for wizard",
+  "Rarity": "common",
+  "SubType": "Armor"
+},
+{
+  "_id": {
+    "$oid": "6824dffa3d2806ff2f43467b"
+  },
+  "Name": "Rude Leather Armor",
+  "Type": "Light",
+  "Defense": 15,
+  "Agility": 10,
+  "Description": "A simple Light Armor",
+  "Rarity": "common",
+  "SubType": "Armor"
+},
+{
+  "_id": {
+    "$oid": "6824e0993d2806ff2f43467c"
+  },
+  "Name": "Chainmail Armor",
+  "Type": "Heavy",
+  "Defense": 30,
+  "Description": "A basic Chainmail Armor",
+  "Rarity": "common",
+  "SubType": "Armor"
+}]

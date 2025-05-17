@@ -11,12 +11,15 @@ import com.googlecode.lanterna.screen.Screen;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.ScheduledExecutorService;
 
 public class PVPFightView {
     private final WindowBasedTextGUI gui;
     private final Screen screen;
     private final PVPService fightService = new PVPService();
     private final LanternaUtils lanternaUtils;
+    private ScheduledExecutorService scheduler;
+    private int turn;
 
     public PVPFightView(WindowBasedTextGUI gui, Screen screen) {
         this.gui = gui;
@@ -25,6 +28,7 @@ public class PVPFightView {
     }
 
     public void mainWindow(PVPFight fight, boolean waiting) {
+
         if (fight == null) {
             try{
                 fight = fightService.getCurrentFight();
@@ -32,6 +36,8 @@ public class PVPFightView {
                 lanternaUtils.openMessagePopup("Erreur", e.getMessage());
             }
         }
+        assert fight != null;
+        this.turn = fight.getTurn();
         BasicWindow window = new BasicWindow("Combat");
         window.setHints(List.of(Window.Hint.CENTERED));
         window.setTitle("Combat");
