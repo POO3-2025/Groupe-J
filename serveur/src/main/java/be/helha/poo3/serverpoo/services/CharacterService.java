@@ -313,9 +313,4 @@ public class CharacterService {
         }
         return false;
     }
-
-    /**
-     * Met à jour les points de vie actuels d’un personnage en base de données.
-     */
-
 }

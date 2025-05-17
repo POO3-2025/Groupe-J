@@ -3,10 +3,10 @@
     "mysql": {
       "production": {
         "host": "localhost",
-        "port": 3306,
-        "database": "prod_db",
-        "user": "root",
-        "password": "root"
+        "port": 3366,
+        "database": "poo3_server_mysql",
+        "user": "poo3_game",
+        "password": "game"
       },
       "test": {
         "host": "localhost",

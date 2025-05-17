@@ -82,7 +82,11 @@ public class PVPFightView {
                 }
 
                 window.close();
-                new ExplorationView(gui,screen).show();
+                try {
+                    new ExplorationView(gui,screen).show();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
             }));
             buttonActionPanel.addComponent(new EmptySpace());
         } else {

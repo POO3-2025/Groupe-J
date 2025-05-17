@@ -49,5 +49,6 @@ public class RoomDTOClient {
 
     public void setMonster(Monster monster) { this.monster = monster; }
 
+    public Monster getMonster() { return monster; }
 
 }

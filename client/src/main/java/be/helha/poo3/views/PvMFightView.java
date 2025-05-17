@@ -1,7 +1,9 @@
 package be.helha.poo3.views;
 
+import be.helha.poo3.models.CharacterWithPos;
 import be.helha.poo3.models.PVMFightDTO;
 import be.helha.poo3.models.PvmTurnResult;
+import be.helha.poo3.services.CharacterService;
 import be.helha.poo3.services.PVMFightService;
 import be.helha.poo3.utils.LanternaUtils;
 import com.googlecode.lanterna.gui2.*;
@@ -23,7 +25,7 @@ public class PvMFightView {
         lanternaUtils = new LanternaUtils(gui, screen);
     }
 
-    public void mainWindow(PvmTurnResult result) {
+    public void mainWindow(PvmTurnResult result) throws IOException{
         BasicWindow window = new BasicWindow("Combat");
         window.setHints(List.of(Window.Hint.CENTERED));
         window.setTitle("Combat");
@@ -63,26 +65,39 @@ public class PvMFightView {
 
         if(result != null && result.isFightEnd()) {
             buttonActionPanel.addComponent(new EmptySpace());
-            buttonActionPanel.addComponent(new Button("Finir le combat", ()->{
+            buttonActionPanel.addComponent(new Button("Finir le combat", () -> {
                 try {
-                    System.out.println(fightService.endFight().toString());
-                    if (fight.getPlayerHp() > 0){
-                        lanternaUtils.openMessagePopup("Bravo","Vous avez gagnez ce combat");
+                    fightService.endFight();
+                    window.close();
+
+                    if (fight.getPlayerHp() > 0) {
+                        lanternaUtils.openMessagePopup("Bravo", "Vous avez gagné ce combat");
                         window.close();
-                        new ExplorationView(gui,screen).show();
                     } else {
                         lanternaUtils.openMessagePopup("RIP", "Vous y arriverez la prochaine fois");
-                        window.close();
-                        new MainMenuView(gui,screen).show();
+                        new MainMenuView(gui, screen).show();
                     }
 
-                }catch (Exception e) {
-                    lanternaUtils.openMessagePopup("Erreur", e.getMessage());
-                    window.close();
-                    new ExplorationView(gui,screen).show();
+                } catch (Exception e) {
+                    String message = e.getMessage();
+                    if (message != null && message.toLowerCase().contains("inventory")) {
+                        lanternaUtils.openMessagePopup("Inventaire plein", "Votre inventaire est plein. Libérez de l'espace et réessayez.");
+                        CharacterWithPos character = null;
+                        try {
+                            character = new CharacterService().getInGameCharacter();
+                        } catch (IOException ex) {
+                            throw new RuntimeException(ex);
+                        }
+                        try {
+                            new ExplorationView(gui, screen, character).show();
+                        } catch (IOException ex) {
+                            throw new RuntimeException(ex);
+                        }
+                    } else {
+                        lanternaUtils.openMessagePopup("Erreur", message);
+                        new MainMenuView(gui, screen).show();
+                    }
                 }
-
-
             }));
             buttonActionPanel.addComponent(new EmptySpace());
         } else {

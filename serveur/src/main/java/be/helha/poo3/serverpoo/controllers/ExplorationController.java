@@ -113,24 +113,14 @@ public class ExplorationController {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
             }
 
-            var loot = explorationService.getLootFromChest(character);
+            boolean lootSuccess = explorationService.getLootFromChest(character);
 
-            if(!loot) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-            }
-
-            return ResponseEntity.ok(loot);
+            return ResponseEntity.ok(lootSuccess);
 
         } catch (JwtException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("error", "Token invalide"));
         }
     }
-
-
-
-
-
-    // ... autres endpoints fightMonster, openChest, etc.
 }
 
