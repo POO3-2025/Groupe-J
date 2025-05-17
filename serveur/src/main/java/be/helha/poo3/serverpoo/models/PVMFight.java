@@ -140,7 +140,7 @@ public class PVMFight {
         this.rewardItem = rewardItem;
     }
 
-    public class PvmTurnResult {
+    public static class PvmTurnResult {
         private boolean fightEnd;
         private String player;
         private String monster;
