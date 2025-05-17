@@ -66,6 +66,14 @@ public class ExplorationView {
             }));
         }
 
+
+
+        mainPanel.addComponent(new Button("Voir l'inventaire", () -> {
+            menuWindow.close(); // Fermer proprement
+            new InventoryView(gui, screen).show(/*menuWindow*/);
+        }));
+
+
         mainPanel.addComponent(new Button("Quitter", ()->{
             this.leave(menuWindow);
         }));
