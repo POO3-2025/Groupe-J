@@ -76,15 +76,9 @@ public class InventoryView {
         mainPanel.addComponent(new EmptySpace());
         mainPanel.addComponent(new Button("Retour", () -> {
             inventoryWindow.close();
-            try {
-                new ExplorationView(gui, screen).show();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
         }));
 
         inventoryWindow.setComponent(mainPanel);
-        //previousWindow.setVisible(false);
         gui.addWindowAndWait(inventoryWindow);
     }
 

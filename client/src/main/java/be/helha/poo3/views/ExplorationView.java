@@ -191,6 +191,10 @@ public class ExplorationView {
             }));
         }
 
+        mainPanel.addComponent(new Button("Voir l'inventaire", () -> {
+            new InventoryView(gui, screen).show();
+        }));
+
         mainPanel.addComponent(new Button("Quitter", this::leave));
 
         // Met à jour la fenêtre principale avec le nouveau panel
