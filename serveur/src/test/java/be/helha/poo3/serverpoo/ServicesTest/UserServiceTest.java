@@ -58,7 +58,7 @@ public class UserServiceTest {
     @Test
     void testAddUser_Success() throws Exception {
         // GIVEN
-        Users newUser = new Users(0, "testUser", "plainPassword", null, false);
+        Users newUser = new Users(0, "testUser", "plainPassword", null, false, 0);
 
         // Spy pour pouvoir mocker uniquement certaines méthodes
         UserService spyService = Mockito.spy(userService);
@@ -222,7 +222,7 @@ public class UserServiceTest {
     void testUpdateUser_Success() throws Exception {
         // GIVEN
         int userId = 5;
-        Users existingUser = new Users(userId, "oldName", "oldPass", "USER", true);
+        Users existingUser = new Users(userId, "oldName", "oldPass", "USER", true, 0);
 
         // Spy pour intercepter uniquement certaines méthodes
         UserService spyService = Mockito.spy(userService);
@@ -235,7 +235,7 @@ public class UserServiceTest {
         when(mockPreparedStatement.executeUpdate()).thenReturn(1);
 
         // Préparation du nouvel utilisateur
-        Users updatedInfo = new Users(0, "newName", "newPass", "ADMIN", true);
+        Users updatedInfo = new Users(0, "newName", "newPass", "ADMIN", true, 0);
         when(passwordEncoder.encode("newPass")).thenReturn("encodedNewPass");
 
         // WHEN

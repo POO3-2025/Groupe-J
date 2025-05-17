@@ -56,4 +56,27 @@ class ItemServiceTest {
 
         assertEquals(50, value);
     }
+
+    @Test
+    public void dynamicItemIntGetterAndSetter() throws Exception {
+        Item item = ItemService.getItemByName("Basic Sword");
+        assertNotNull(item);
+        int value = item.getInt("damage");
+        assertEquals(50, value);
+        item.setInt("damage", 20);
+        value = item.getInt("damage");
+        assertEquals(20, value);
+    }
+
+    @Test
+    public void checkAttributesList() throws Exception {
+        Item item = ItemService.getItemByName("Basic Sword");
+        assertNotNull(item);
+        List<String> attributes = item.getAdditionalAttributes();
+        assertEquals(1, attributes.size(),"Il doit y avoir exactement un attribut supplémentaire");
+        assertTrue(attributes.contains("damage"), "L'attribut « damage » est attendu");
+    }
+
+
+
 }

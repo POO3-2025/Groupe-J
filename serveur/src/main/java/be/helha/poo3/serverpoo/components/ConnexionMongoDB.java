@@ -46,8 +46,8 @@ public class ConnexionMongoDB {
         }
     }
 
-    public MongoCollection<Document> getCollection() {
-        return collection;
+    public MongoCollection<Document> getCollection(String name) {
+        return mongoClient.getDatabase(config.getDb()).getCollection(name);
     }
 
     @PreDestroy
