@@ -122,7 +122,7 @@ public class CharacterCreationView {
                     lu.openMessagePopup("Erreur", "Création refusée par le serveur");
                 }
             } catch (IOException ex) {
-                lu.openMessagePopup("Erreur", "Impossible de contacter le serveur : " + ex.getMessage());
+                lu.openMessagePopup("Erreur",  ex.getMessage());
             }
         });
 

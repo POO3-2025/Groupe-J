@@ -7,4 +7,8 @@ public class Monster {
     private Monsters type;
     private int currentHealth;
     private Temperament temperament;
+
+    public Monsters getType() {
+        return type;
+    }
 }

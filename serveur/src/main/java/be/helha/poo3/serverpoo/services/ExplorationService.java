@@ -67,6 +67,12 @@ public class ExplorationService {
     public boolean getLootFromChest(CharacterWithPos character) {
         Point position = character.getPosition();
         Room room = dungeonMapService.getRoomById(position.x + ":" + position.y);
+        //vérifie que l'inventaire n'est pas plein
+        Inventory inventory = inventoryService.getInventory(new ObjectId(character.getInventoryId()));
+        if(inventory.getItems().size() >= 10){
+            return false;
+        }
+
         if (room == null) {
             return false;
         }else {

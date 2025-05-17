@@ -20,6 +20,12 @@ public class Monster {
         currentHealth -= damageTaken;
     }
 
+    public Monsters getType(){ return type; }
+
+    public double getHealthPercentage() {
+        return (double) currentHealth / type.getHealth() *100;
+    }
+
     public String getName() {
         return type.getName();
     }
@@ -35,6 +41,8 @@ public class Monster {
     public Rarity getRarity() {
         return type.getRarity();
     }
+
+    public void setCurrentHealth(int currentHealth) { this.currentHealth = currentHealth; }
 
     public Temperament getTemperament() { return temperament; }
 }

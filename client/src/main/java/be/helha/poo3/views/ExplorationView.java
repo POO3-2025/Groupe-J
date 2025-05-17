@@ -68,9 +68,11 @@ public class ExplorationView {
                 if(success){
                     // Rafraîchit l'état de la salle courante
                     RoomDTOClient updatedRoom = explorationService.getCurrentRoom();
+                }else {
+                    lanternaUtils.openMessagePopup("Inventaire pleins","Votre inventaire est pleins, veuillez le vider.");
                 }
-                // Retourner à la vue principale avec l'état mis à jour
                 updateMainWindowContent();
+
             } catch (IOException e) {
                 System.err.println("Erreur lors de la récupération: " + e.getMessage());
                 e.printStackTrace();
@@ -135,15 +137,24 @@ public class ExplorationView {
 
         // Récupérer l'état actuel de la salle
         RoomDTOClient room = explorationService.getCurrentRoom();
-        System.out.println("Mise à jour de l'interface pour la salle: " + room.getId() +
-                ", coffre: " + room.isHasChest() +
-                ", monstre: " + room.isHasMonster());
 
-        mainPanel.addComponent(new Label("Position actuelle : " + character.getPosition()));
         mainPanel.addComponent(new Label("Tu arrives dans une salle sombre, que fais-tu ?"));
 
         // Ajout de boutons conditionnels selon l'état de la salle
+
+        if (room.isHasMonster()) {
+            mainPanel.addComponent(new Label("Il y a un " + room.getMonster().getType()));
+            mainPanel.addComponent(new Button("Attaquer le monstre", () -> {
+                try {
+                    new PvMFightView(gui, screen).mainWindow(null);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }));
+        }
+
         if (room.isHasChest()) {
+
             mainPanel.addComponent(new Button("Ouvrir le coffre", () -> {
                 try {
                     openChest();
@@ -151,12 +162,6 @@ public class ExplorationView {
                     System.err.println("Erreur lors de l'ouverture du coffre: " + e.getMessage());
                     e.printStackTrace();
                 }
-            }));
-        }
-
-        if (room.isHasMonster()) {
-            mainPanel.addComponent(new Button("Attaquer le monstre", () -> {
-                lanternaUtils.openMessagePopup("Combat", "Ouille, ça pique !");
             }));
         }
 
