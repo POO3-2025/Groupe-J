@@ -1,0 +1,29 @@
+plugins {
+    id 'java'
+    id 'application'                           // ⇦ indique le point d’entrée
+    id 'com.github.johnrengelman.shadow' version '8.1.1' // ⇦ JAR « fat »
+}
+
+group   = 'be.helha.poo3'
+version = '1.0.0'
+
+repositories { mavenCentral() }
+
+dependencies {
+    implementation 'com.googlecode.lanterna:lanterna:3.1.3'
+    implementation 'com.google.code.gson:gson:2.11.0'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
+}
+
+application {
+    // Remplace par le FQN de ta classe Main
+    mainClass = 'be.helha.poo3.ConfigEditor'
+}
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(21) // ou ta version LTS
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
