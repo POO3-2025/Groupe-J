@@ -14,10 +14,19 @@ import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.*;
 
+/**
+ * Service permettant la gestion de l'inventaire du joueur en communiquant avec le backend.
+ * Contient des méthodes pour récupérer, équiper, consommer, déséquiper et supprimer des objets.
+ */
 public class InventoryService {
     private static final String BASE_URL = "http://localhost:8080/inventory";
     private final Gson gson = new Gson();
 
+    /**
+     * Récupère la liste des objets présents dans l'inventaire.
+     *
+     * @return Une liste de maps représentant les objets.
+     */
     public List<Map<String, Object>> getInventoryItems() {
         String token = UserSession.getAccessToken();
         if (token == null || token.isEmpty()) return Collections.emptyList();
@@ -43,6 +52,11 @@ public class InventoryService {
         return Collections.emptyList();
     }
 
+    /**
+     * Récupère toutes les informations de l'inventaire, y compris les slots d'équipement.
+     *
+     * @return Une map contenant les données de l'inventaire complet.
+     */
     public Map<String, Object> getFullInventory() {
         String token = UserSession.getAccessToken();
         if (token == null || token.isEmpty()) return Map.of();
@@ -64,14 +78,33 @@ public class InventoryService {
         return Map.of();
     }
 
+    /**
+     * Équipe un objet dans un slot donné.
+     *
+     * @param slot   Le slot d'équipement (main, armor, second).
+     * @param itemId L'identifiant de l'objet à équiper.
+     * @return true si l’opération a réussi, false sinon.
+     */
     public boolean equipItem(String slot, String itemId) {
         return sendJsonPost(BASE_URL + "/equip/" + slot, Map.of("id", itemId));
     }
 
+    /**
+     * Consomme un objet (généralement de type consommable).
+     *
+     * @param itemId L'identifiant de l'objet à consommer.
+     * @return true si la consommation a réussi, false sinon.
+     */
     public boolean consumeItem(String itemId) {
         return sendEmptyPatch(BASE_URL + "/items/" + itemId + "/consume");
     }
 
+    /**
+     * Rafraîchit un item depuis la liste actuelle de l’inventaire.
+     *
+     * @param itemId L'identifiant de l'objet à rafraîchir.
+     * @return L'objet correspondant, ou null s'il n’est pas trouvé.
+     */
     public Map<String, Object> refreshItemById(String itemId) {
         return getInventoryItems().stream()
                 .filter(i -> itemId.equals(i.get("_id")) || itemId.equals(i.get("id")))
@@ -79,6 +112,11 @@ public class InventoryService {
                 .orElse(null);
     }
 
+    /**
+     * Récupère uniquement les objets équipés (slots main, armor, second).
+     *
+     * @return Une map avec les objets équipés par slot.
+     */
     public Map<String, Object> getEquippedItems() {
         Map<String, Object> fullInventory = getFullInventory();
         return Map.of(
@@ -88,10 +126,22 @@ public class InventoryService {
         );
     }
 
+    /**
+     * Déséquipe un objet d’un slot donné.
+     *
+     * @param slot Le slot à déséquiper (main, armor, second).
+     * @return true si l’opération a réussi, false sinon.
+     */
     public boolean unequipSlot(String slot) {
         return sendEmptyPost(BASE_URL + "/unequip/" + slot + "?force=false");
     }
 
+    /**
+     * Supprime un objet de l’inventaire.
+     *
+     * @param itemId L'identifiant de l'objet à supprimer.
+     * @return true si la suppression a réussi, false sinon.
+     */
     public boolean deleteItem(String itemId) {
         String token = UserSession.getAccessToken();
         if (token == null || token.isEmpty()) return false;
@@ -109,7 +159,7 @@ public class InventoryService {
         }
     }
 
-    // Utilitaires privés pour factoriser
+    // ========== Utilitaires privés pour factoriser ==========
     private boolean sendJsonPost(String url, Map<String, String> payload) {
         String token = UserSession.getAccessToken();
         if (token == null || token.isEmpty()) return false;
