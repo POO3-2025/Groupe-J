@@ -2,7 +2,11 @@ package be.helha.poo3.services;
 
 import be.helha.poo3.utils.UserSession;
 import com.google.gson.Gson;
-import okhttp3.*;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpPut;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -15,27 +19,27 @@ public class PasswordService {
     private static final String API_URL = "http://localhost:8080/users/";
 
     public static boolean changePassword(String newPassword) {
-        OkHttpClient client = new OkHttpClient();
         Gson gson = new Gson();
 
         Map<String, String> bodyMap = new HashMap<>();
         bodyMap.put("password", newPassword);
 
-        System.out.println(UserSession.getId_user());
+        String url = API_URL + UserSession.getId_user();
 
-        RequestBody body = RequestBody.create(
-                gson.toJson(bodyMap),
-                MediaType.parse("application/json")
-        );
+        try (CloseableHttpClient client = HttpClients.createDefault()) {
+            HttpPut httpPut = new HttpPut(url);
+            httpPut.setHeader("Authorization", "Bearer " + UserSession.getAccessToken());
+            httpPut.setHeader("Content-Type", "application/json");
 
-        Request request = new Request.Builder()
-                .url(API_URL + UserSession.getId_user()) // Envoie l'ID de l'utilisateur
-                .put(body)
-                .addHeader("Authorization", "Bearer " + UserSession.getAccessToken()) // Ajout du token
-                .build();
+            String json = gson.toJson(bodyMap);
+            StringEntity entity = new StringEntity(json, "UTF-8");
+            httpPut.setEntity(entity);
 
-        try (Response response = client.newCall(request).execute()) {
-            return response.isSuccessful();
+            try (CloseableHttpResponse response = client.execute(httpPut)) {
+                return response.getStatusLine().getStatusCode() >= 200 &&
+                        response.getStatusLine().getStatusCode() < 300;
+            }
+
         } catch (IOException e) {
             return false;
         }
