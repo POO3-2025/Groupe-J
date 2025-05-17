@@ -2,6 +2,7 @@ package be.helha.poo3.models;
 
 public class PVPFight {
     boolean endFight;
+    String fightId;
     int turn;
     int playerID;
     int playerOneId;
@@ -17,10 +18,11 @@ public class PVPFight {
     String playerTwoAction;
     int playerTwoDamageTaken;
 
-    public PVPFight(boolean endFight, int turn, int playerId, int playerOneId, String playerOneName, int playerOneHp, int playerOneMaxHP, String playerOneAction, int playerOneDamageTaken, int playerTwoId, String playerTwoName, int playerTwoHp, int playerTwoMaxHP, String playerTwoAction, int playerTwoDamageTaken){
+    public PVPFight(boolean endFight, String fightId, int turn, int playerID, int playerOneId, String playerOneName, int playerOneHp, int playerOneMaxHP, String playerOneAction, int playerOneDamageTaken, int playerTwoId, String playerTwoName, int playerTwoHp, int playerTwoMaxHP, String playerTwoAction, int playerTwoDamageTaken) {
         this.endFight = endFight;
+        this.fightId = fightId;
         this.turn = turn;
-        this.playerID = playerId;
+        this.playerID = playerID;
         this.playerOneId = playerOneId;
         this.playerOneName = playerOneName;
         this.playerOneHp = playerOneHp;
@@ -61,6 +63,14 @@ public class PVPFight {
 
     public void setEndFight(boolean endFight) {
         this.endFight = endFight;
+    }
+
+    public String getFightId() {
+        return fightId;
+    }
+
+    public void setFightId(String fightId) {
+        this.fightId = fightId;
     }
 
     public int getTurn() {

@@ -98,8 +98,8 @@ public class PVPFightService {
     public PVPFight getFightByPlayerId(int playerId) {
         return fights.values().stream()
                 .filter(f ->
-                        f.getPlayerOne().getId() == playerId
-                                || f.getPlayerTwo().getId() == playerId)
+                        (f.getPlayerOne().getId() == playerId
+                                || f.getPlayerTwo().getId() == playerId) && !f.isFinished())
                 .findFirst().orElse(null);
     }
 
@@ -114,6 +114,7 @@ public class PVPFightService {
             fight.setFinished(true);
             return new PVPFightDTO(
                     true,
+                    fight.getId().toHexString(),
                     fight.getTurn().get(),
                     0,
                     playerOne.getId(),
@@ -182,6 +183,7 @@ public class PVPFightService {
 
         return new PVPFightDTO(
                 true,
+                fight.getId().toHexString(),
                 fight.getTurn().get(),
                 0,
                 playerOne.getId(),

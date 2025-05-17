@@ -2,6 +2,7 @@ package be.helha.poo3.serverpoo.models;
 
 public class PVPFightDTO {
     boolean endFight;
+    String fightId;
     int turn;
     int playerID;
     int playerOneId;
@@ -17,8 +18,9 @@ public class PVPFightDTO {
     String playerTwoAction;
     int playerTwoDamageTaken;
 
-    public PVPFightDTO(boolean endFight, int turn, int playerId, int playerOneId, String playerOneName, int playerOneHp, int playerOneMaxHP, String playerOneAction, int playerOneDamageTaken, int playerTwoId, String playerTwoName, int playerTwoHp, int playerTwoMaxHP, String playerTwoAction, int playerTwoDamageTaken){
+    public PVPFightDTO(boolean endFight, String fightId, int turn, int playerId, int playerOneId, String playerOneName, int playerOneHp, int playerOneMaxHP, String playerOneAction, int playerOneDamageTaken, int playerTwoId, String playerTwoName, int playerTwoHp, int playerTwoMaxHP, String playerTwoAction, int playerTwoDamageTaken){
         this.endFight = endFight;
+        this.fightId = fightId;
         this.turn = turn;
         this.playerID = playerId;
         this.playerOneId = playerOneId;
@@ -41,6 +43,14 @@ public class PVPFightDTO {
 
     public void setEndFight(boolean endFight) {
         this.endFight = endFight;
+    }
+
+    public String getFightId() {
+        return fightId;
+    }
+
+    public void setFightId(String fightId) {
+        this.fightId = fightId;
     }
 
     public int getTurn() {

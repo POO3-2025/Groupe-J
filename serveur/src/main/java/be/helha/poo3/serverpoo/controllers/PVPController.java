@@ -128,6 +128,10 @@ public class PVPController {
         try {
             int tokenUserId = jwtUtils.getUserIdFromToken(token);
             CharacterWithPos character = inGameCharacterService.getInGameCharacterByUserId(tokenUserId);
+            PVPFightDTO fight = fightService.submitAction(character.getIdCharacter(), action);
+            if (fight == null) {
+                return ResponseEntity.status(204).body("En attente de l'opposant");
+            }
             return ResponseEntity.ok(fightService.submitAction(character.getIdCharacter(), action));
         } catch (JwtException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token invalide : " + e.getMessage());
@@ -146,6 +150,24 @@ public class PVPController {
             int tokenUserId = jwtUtils.getUserIdFromToken(token);
             CharacterWithPos character = inGameCharacterService.getInGameCharacterByUserId(tokenUserId);
             PVPFight fight = fightService.getFightByPlayerId(character.getIdCharacter());
+            if (fight == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Fight not found");
+            return ResponseEntity.ok(fight.getTurns().get(fight.getTurns().size() - 1).getResult());
+        } catch (JwtException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token invalide : " + e.getMessage());
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erreur : " + e.getMessage());
+        }
+    }
+
+    @GetMapping(path = "/{fightId}")
+    public ResponseEntity<?> get(@PathVariable String fightId, @RequestHeader(value = "Authorization", required = false) String authHeader) {
+        if (authHeader == null || authHeader.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Authorization header is missing");
+        }
+        String token = authHeader.startsWith("Bearer ") ? authHeader.substring(7) : authHeader;
+        try {
+            int tokenUserId = jwtUtils.getUserIdFromToken(token);
+            PVPFight fight = fightService.getFight(new ObjectId(fightId));
             if (fight == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Fight not found");
             return ResponseEntity.ok(fight.getTurns().get(fight.getTurns().size() - 1).getResult());
         } catch (JwtException e) {
