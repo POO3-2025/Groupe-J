@@ -72,13 +72,7 @@ public class PvMFightView {
 
                     if (fight.getPlayerHp() > 0) {
                         lanternaUtils.openMessagePopup("Bravo", "Vous avez gagné ce combat");
-                        try {
-                            CharacterWithPos character = new CharacterService().getInGameCharacter();
-                            new ExplorationView(gui, screen, character).show();
-                        } catch (IOException ex) {
-                            lanternaUtils.openMessagePopup("Erreur", "Personnage introuvable après la victoire.");
-                            new MainMenuView(gui, screen).show();
-                        }
+                        window.close();
                     } else {
                         lanternaUtils.openMessagePopup("RIP", "Vous y arriverez la prochaine fois");
                         new MainMenuView(gui, screen).show();

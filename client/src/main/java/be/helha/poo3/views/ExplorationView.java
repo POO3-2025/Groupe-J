@@ -146,7 +146,9 @@ public class ExplorationView {
             mainPanel.addComponent(new Label("Il y a un " + room.getMonster().getType()));
             mainPanel.addComponent(new Button("Attaquer le monstre", () -> {
                 try {
+                    mainWindow.setVisible(false);
                     new PvMFightView(gui, screen).mainWindow(null);
+                    mainWindow.setVisible(true);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -197,7 +199,9 @@ public class ExplorationView {
         }
 
         mainPanel.addComponent(new Button("Voir l'inventaire", () -> {
+            mainWindow.setVisible(false);
             new InventoryView(gui, screen).show();
+            mainWindow.setVisible(true);
         }));
 
         mainPanel.addComponent(new Button("Quitter", this::leave));

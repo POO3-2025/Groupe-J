@@ -110,7 +110,7 @@ public class CharacterService {
 
     public boolean addCharacter(CharacterDTO character) throws IOException {
         if (character == null ||
-                (character.getConstitution() + character.getConstitution() + character.getStrength()) > 5) {
+                (character.getConstitution() + character.getDexterity() + character.getStrength()) > 5) {
             return false;
         }
         HttpPost request = new HttpPost(API_URL);
