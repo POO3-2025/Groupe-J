@@ -1,12 +1,11 @@
 package be.helha.poo3.views;
 
-import be.helha.poo3.models.CharacterDTO;
-import be.helha.poo3.models.CharacterWithPos;
-import be.helha.poo3.models.Item;
-import be.helha.poo3.models.RoomDTOClient;
+import be.helha.poo3.models.*;
 import be.helha.poo3.services.CharacterService;
 import be.helha.poo3.services.ExplorationService;
+import be.helha.poo3.services.PVPService;
 import be.helha.poo3.utils.LanternaUtils;
+import be.helha.poo3.utils.UserSession;
 import com.googlecode.lanterna.TerminalSize;
 import com.googlecode.lanterna.gui2.*;
 import com.googlecode.lanterna.gui2.Button;
@@ -19,6 +18,9 @@ import java.awt.*;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class ExplorationView {
     private final WindowBasedTextGUI gui;
@@ -28,8 +30,11 @@ public class ExplorationView {
     private final ExplorationService explorationService = new ExplorationService();
     private final BasicWindow mainWindow = new BasicWindow("Exploration");
     private CharacterWithPos character;
+    private ScheduledExecutorService scheduler;
+    private final PVPService pvpService = new PVPService();
+    private volatile boolean isPaused = false;
 
-    public ExplorationView(WindowBasedTextGUI gui, Screen screen,CharacterWithPos character) throws IOException{
+        public ExplorationView(WindowBasedTextGUI gui, Screen screen,CharacterWithPos character) throws IOException{
         this.gui = gui;
         this.screen = screen;
         this.character = character;
@@ -44,12 +49,14 @@ public class ExplorationView {
 
 
     public void show() throws IOException{
+        //startChallengePolling();
         mainWindow.setHints(List.of(Window.Hint.CENTERED));
         mainWindow.setTitle("Exploration");
 
         //initialise la vue pour la première fois
         updateMainWindowContent();
         gui.addWindowAndWait(mainWindow);
+        //  scheduler.shutdown();
     }
 
     public void openChest() throws IOException {
@@ -147,8 +154,11 @@ public class ExplorationView {
             mainPanel.addComponent(new Button("Attaquer le monstre", () -> {
                 try {
                     mainWindow.setVisible(false);
+                    isPaused = true;
                     new PvMFightView(gui, screen).mainWindow(null);
+                    updateMainWindowContent();
                     mainWindow.setVisible(true);
+                    isPaused = false;
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -211,5 +221,56 @@ public class ExplorationView {
 
         // Force la mise à jour de l'écran
         gui.updateScreen();
+    }
+
+    private void startChallengePolling(){
+            scheduler = Executors.newSingleThreadScheduledExecutor();
+            Runnable poll = ()->{
+                System.out.println("Polling");
+                if(isPaused) return;
+
+                try {
+                    ChallengeRequest request = pvpService.getChallengeToMe();
+                    if (request != null && request.getStatus().equals("PENDING")) {
+                        isPaused = true;
+                        gui.getGUIThread().invokeLater(()-> handleIncomingChallenge(request));
+                        isPaused = false;
+                    } else {
+                        PVPFight fight = pvpService.getCurrentFight();
+                        if (fight != null) {
+                            isPaused = true;
+                            gui.getGUIThread().invokeLater(()-> openFightView(fight));
+                            isPaused = false;
+                        }
+
+                        if (request != null) System.out.println(request.getStatus());
+                    }
+                } catch (Exception e) {
+                    System.out.println(e.getMessage());
+                }
+            };
+            scheduler.scheduleAtFixedRate(poll, 0, 3, TimeUnit.SECONDS);
+
+    }
+
+    private void handleIncomingChallenge(ChallengeRequest request) {
+        String msg = "Le joueur " + request.getChallengerName() + " vous défie !\nAccepter ?";
+        boolean accept = lanternaUtils.openConfirmationPopup("Défi reçu", msg);
+
+        try {
+            if (accept) {
+                pvpService.acceptChallenge(request.getId());
+                new PVPFightView(gui, screen, request.getId()).mainWindow(null,false);
+            } else {
+                pvpService.declineChallenge(request.getId());
+            }
+        } catch (IOException e) {
+            lanternaUtils.openMessagePopup("Erreur réseau", e.getMessage());
+        }
+    }
+
+    private void openFightView(PVPFight fight) {
+            new PVPFightView(gui,screen, fight.getFightId()).mainWindow(fight,false);
+
     }
 }

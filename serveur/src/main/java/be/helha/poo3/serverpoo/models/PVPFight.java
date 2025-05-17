@@ -8,7 +8,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 
 public class PVPFight {
-    private final ObjectId id = new ObjectId();
+    private ObjectId id = new ObjectId();
     private final FightCharacter playerOne;
     private final FightCharacter playerTwo;
     private final AtomicInteger turn = new AtomicInteger(0);
@@ -39,6 +39,10 @@ public class PVPFight {
 
     public ObjectId getId() {
         return id;
+    }
+
+    public void setId(ObjectId id) {
+        this.id = id;
     }
 
     public FightCharacter getPlayerOne() {

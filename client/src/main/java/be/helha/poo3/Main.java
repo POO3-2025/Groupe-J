@@ -1,5 +1,6 @@
 package be.helha.poo3;
 
+import be.helha.poo3.services.CharacterService;
 import be.helha.poo3.services.ExplorationService;
 import be.helha.poo3.views.ExplorationView;
 import be.helha.poo3.views.LoginView;
@@ -10,6 +11,8 @@ import com.googlecode.lanterna.screen.TerminalScreen;
 import com.googlecode.lanterna.terminal.swing.SwingTerminalFrame;
 import com.googlecode.lanterna.terminal.DefaultTerminalFactory;
 
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.IOException;
 
 public class Main {
@@ -21,6 +24,18 @@ public class Main {
             terminalFactory.setInitialTerminalSize(new TerminalSize(80, 24));
             // Ajout du SwingTerminal dans un SwingTerminalFrame
             SwingTerminalFrame terminal = terminalFactory.createSwingTerminal();
+
+            terminal.addWindowListener(new WindowAdapter() {
+                @Override
+                public void windowClosing(WindowEvent e) {
+                    try {
+                        new CharacterService().leaveGame();
+                    } catch (Exception e1) {
+                        e1.printStackTrace();
+                    }
+
+                }
+            });
             terminal.setVisible(true);
             // Désactiver la redimension
             terminal.setResizable(false);

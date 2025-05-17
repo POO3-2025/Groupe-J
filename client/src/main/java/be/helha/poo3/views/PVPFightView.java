@@ -20,11 +20,13 @@ public class PVPFightView {
     private final LanternaUtils lanternaUtils;
     private ScheduledExecutorService scheduler;
     private int turn;
+    private final String fightId;
 
-    public PVPFightView(WindowBasedTextGUI gui, Screen screen) {
+    public PVPFightView(WindowBasedTextGUI gui, Screen screen, String fightId) {
         this.gui = gui;
         this.screen = screen;
         this.lanternaUtils = new LanternaUtils(gui, screen);
+        this.fightId = fightId;
     }
 
     public void mainWindow(PVPFight fight, boolean waiting) {
@@ -80,13 +82,12 @@ public class PVPFightView {
                 } else if (opponent.getPlayerAction().equals("forfeit")){
                     lanternaUtils.openMessagePopup("Abandon","Votre opposant a abandonné");
                 }
-
-                window.close();
                 try {
                     new ExplorationView(gui,screen).show();
                 } catch (IOException e) {
-                    throw new RuntimeException(e);
+                    lanternaUtils.openMessagePopup("Erreur", e.getMessage());
                 }
+                window.close();
             }));
             buttonActionPanel.addComponent(new EmptySpace());
         } else {
@@ -140,7 +141,7 @@ public class PVPFightView {
         try {
             window.close();
             PVPFight refreshedFight = fightService.getFightById(fight.getFightId());
-            new PVPFightView(this.gui,this.screen).mainWindow(fight, refreshedFight.getTurn() == fight.getTurn());
+            new PVPFightView(this.gui,this.screen,fightId).mainWindow(fight, refreshedFight.getTurn() == fight.getTurn());
         } catch ( IOException e ) {
             lanternaUtils.openMessagePopup("Erreur", e.getMessage());
         }

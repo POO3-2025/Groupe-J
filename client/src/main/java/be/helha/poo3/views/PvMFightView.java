@@ -67,11 +67,11 @@ public class PvMFightView {
             buttonActionPanel.addComponent(new EmptySpace());
             buttonActionPanel.addComponent(new Button("Finir le combat", () -> {
                 try {
-                    fightService.endFight();
+                    Map<String,Object> item = fightService.endFight();
                     window.close();
 
                     if (fight.getPlayerHp() > 0) {
-                        lanternaUtils.openMessagePopup("Bravo", "Vous avez gagné ce combat");
+                        lanternaUtils.openMessagePopup("Bravo", "Vous avez gagné " + item.get("name"));
                         window.close();
                     } else {
                         lanternaUtils.openMessagePopup("RIP", "Vous y arriverez la prochaine fois");
@@ -81,22 +81,12 @@ public class PvMFightView {
                 } catch (Exception e) {
                     String message = e.getMessage();
                     if (message != null && message.toLowerCase().contains("inventory")) {
-                        lanternaUtils.openMessagePopup("Inventaire plein", "Votre inventaire est plein. Libérez de l'espace et réessayez.");
-                        CharacterWithPos character = null;
-                        try {
-                            character = new CharacterService().getInGameCharacter();
-                        } catch (IOException ex) {
-                            throw new RuntimeException(ex);
-                        }
-                        try {
-                            new ExplorationView(gui, screen, character).show();
-                        } catch (IOException ex) {
-                            throw new RuntimeException(ex);
-                        }
+                        lanternaUtils.openMessagePopup("Inventaire plein", "Votre inventaire est plein. L'objet est perdu.");
                     } else {
                         lanternaUtils.openMessagePopup("Erreur", message);
-                        new MainMenuView(gui, screen).show();
+                        //new MainMenuView(gui, screen).show();
                     }
+                    window.close();
                 }
             }));
             buttonActionPanel.addComponent(new EmptySpace());

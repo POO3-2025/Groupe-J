@@ -46,6 +46,7 @@ public class PVPFightService {
             throw new RuntimeException("Can't accept challenge with id " + challengeId);
         challengeRequest.setStatus(ChallengeRequest.ChallengeStatus.ACCEPTED);
         PVPFight fight = new PVPFight(challengeRequest.getChallenger(),challengeRequest.getTarget());
+        fight.setId(challengeRequest.getId());
         fights.put(fight.getId(), fight);
         return challengeRequest;
     }
