@@ -5,6 +5,7 @@ import be.helha.poo3.utils.LanternaUtils;
 import com.googlecode.lanterna.gui2.*;
 import com.googlecode.lanterna.screen.Screen;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -75,11 +76,9 @@ public class InventoryView {
         mainPanel.addComponent(new EmptySpace());
         mainPanel.addComponent(new Button("Retour", () -> {
             inventoryWindow.close();
-            new ExplorationView(gui, screen).show();
         }));
 
         inventoryWindow.setComponent(mainPanel);
-        //previousWindow.setVisible(false);
         gui.addWindowAndWait(inventoryWindow);
     }
 

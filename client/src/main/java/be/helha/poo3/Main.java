@@ -1,5 +1,7 @@
 package be.helha.poo3;
 
+import be.helha.poo3.services.ExplorationService;
+import be.helha.poo3.views.ExplorationView;
 import be.helha.poo3.views.LoginView;
 import com.googlecode.lanterna.TerminalSize;
 import com.googlecode.lanterna.gui2.*;
@@ -29,6 +31,9 @@ public class Main {
             WindowBasedTextGUI gui = new MultiWindowTextGUI(screen);
             // Lancer la vue de connexion
             new LoginView(gui, screen).show();
+
+
+
 
         } catch (IOException e) {
             throw new RuntimeException(e);

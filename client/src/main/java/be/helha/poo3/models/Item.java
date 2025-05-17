@@ -1,5 +1,6 @@
 package be.helha.poo3.models;
 
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import org.bson.types.ObjectId;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -7,10 +8,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class Item {
@@ -156,5 +154,17 @@ public class Item {
             }
         }
         return extras;
+    }
+
+
+    private Map<String, Object> dynamicAttributes = new HashMap<>();
+
+    @JsonAnySetter
+    public void setDynamicAttribute(String key, Object value) {
+        dynamicAttributes.put(key, value);
+    }
+
+    public Object getDynamicAttribute(String key) {
+        return dynamicAttributes.get(key);
     }
 }

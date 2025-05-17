@@ -2,6 +2,7 @@ package be.helha.poo3.services;
 
 import be.helha.poo3.models.CharacterDTO;
 import be.helha.poo3.models.CharacterWithPos;
+import be.helha.poo3.models.Config;
 import be.helha.poo3.models.GameCharacter;
 import be.helha.poo3.utils.UserSession;
 import com.google.gson.Gson;
@@ -19,7 +20,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 public class CharacterService {
-    private static final String API_URL = "http://localhost:8080/character";
+    private static final String API_URL = Config.getBaseUrl()+ "/character";
 
     private static final Gson gson = new Gson();
 
@@ -30,7 +31,6 @@ public class CharacterService {
     }
 
     public List<GameCharacter> getUserCharacter() throws IOException {
-        System.out.println("avant requête");
         String accessToken = UserSession.getAccessToken();
         if (accessToken == null) {
             throw new IllegalStateException("No access token found");
@@ -54,6 +54,22 @@ public class CharacterService {
                 String body = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
                 throw new RuntimeException("Erreur API (" + statusCode + ") : " + body);
             }
+        }
+    }
+
+    public CharacterWithPos getInGameCharacter() throws IOException {
+        HttpGet request = new HttpGet(API_URL + "/myCharacter");
+        request.addHeader("Content-Type", "application/json");
+        request.addHeader("Authorization", "Bearer " + UserSession.getAccessToken());
+        try (CloseableHttpResponse response = (CloseableHttpResponse) client.execute(request)){
+            int statusCode = response.getStatusLine().getStatusCode();
+            if (statusCode  == 200) {
+                return gson.fromJson(EntityUtils.toString(response.getEntity()), CharacterWithPos.class);
+            } else {
+                throw new RuntimeException(EntityUtils.toString(response.getEntity()));
+            }
+        } catch (ClientProtocolException e) {
+            throw new IOException(e.getMessage());
         }
     }
 
@@ -94,7 +110,7 @@ public class CharacterService {
 
     public boolean addCharacter(CharacterDTO character) throws IOException {
         if (character == null ||
-                (character.getConstitution() + character.getConstitution() + character.getStrength()) > 5) {
+                (character.getConstitution() + character.getDexterity() + character.getStrength()) > 5) {
             return false;
         }
         HttpPost request = new HttpPost(API_URL);
@@ -107,8 +123,9 @@ public class CharacterService {
             int statusCode = response.getStatusLine().getStatusCode();
             if (statusCode  == 200) {
                 return true;
+            } else {
+                throw new RuntimeException("Erreur API (" + statusCode + ") : " + EntityUtils.toString(response.getEntity()));
             }
-            System.out.println("Erreur API (" + statusCode + ") : " + json);
         } catch (ClientProtocolException e) {
             e.printStackTrace();
         }

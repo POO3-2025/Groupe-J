@@ -38,3 +38,8 @@ Dockerfile
 ### Pour la DB MySQL (Hus0w) ###
 *.sock
 data/
+<<<<<<< HEAD
+application.properties
+=======
+*.properties
+>>>>>>> d0a8561a7056ea49ef7ab544fdcdd823cb482957
