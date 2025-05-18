@@ -35,7 +35,7 @@ public class DungeonMapService {
 
     @PostConstruct
     public void init(){
-        generateMapWithCoordinates(20);
+        generateMapWithCoordinates(100);
     }
 
     /**
