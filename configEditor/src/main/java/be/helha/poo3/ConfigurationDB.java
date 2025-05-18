@@ -2,14 +2,14 @@ package be.helha.poo3;
 
 import java.util.Map;
 
-class ConfigurationDB {
+public class ConfigurationDB {
     private Databases databases;
 
-    static class Databases {
+    public static class Databases {
         private Map<String, Details> mysql;
         private Map<String, Details> mongoDB;
 
-        static class Details {
+        public static class Details {
             private String host;
             private int port;
             private String database;

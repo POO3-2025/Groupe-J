@@ -7,14 +7,16 @@ import jakarta.annotation.PostConstruct;
 import org.springframework.scheduling.annotation.Scheduled;
 
 
-
-
-
 import java.awt.*;
 import java.util.*;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Service de gestion de la carte du donjon.
+ * Ce service génère une carte composée de salles connectées, gère la création aléatoire
+ * des monstres et coffres, et assure le respawn périodique des entités dans les salles.
+ */
 @Service
 public class DungeonMapService {
     @Autowired
@@ -33,9 +35,13 @@ public class DungeonMapService {
 
     @PostConstruct
     public void init(){
-        generateMapWithCoordinates(20);
+        generateMapWithCoordinates(100);
     }
 
+    /**
+     * Génère la carte du donjon en créant les salles et leurs connexions.
+     * @param count nombre total de salles à générer
+     */
     private void generateMapWithCoordinates(int count) {
         Queue<Room> roomQueue = new LinkedList<>();
         Point origin = new Point(0, 0);
@@ -74,7 +80,10 @@ public class DungeonMapService {
         addExtraConnections(0.25);
     }
 
-
+    /**
+     * Ajoute des connexions supplémentaires entre salles existantes avec une probabilité donnée.
+     * @param prob probabilité de créer une ouverture supplémentaire entre deux salles adjacentes
+     */
     private void addExtraConnections(double prob) {
         for (Room room : roomGrid.values()) {
             Point p = new Point(room.getX(), room.getY());
@@ -93,6 +102,11 @@ public class DungeonMapService {
         }
     }
 
+    /**
+     * Crée une salle avec potentiellement un monstre et/ou un coffre.
+     * Le coffre contiendra un item d'une rareté aléatoire.
+     * @return une nouvelle instance de Room
+     */
     private Room createRoom() {
         boolean hasMonster = random.nextBoolean();
         boolean hasChest = random.nextBoolean();
@@ -127,6 +141,13 @@ public class DungeonMapService {
         return new Room(hasMonster, hasChest, chest, monster);
     }
 
+    /**
+     * Connecte deux salles entre elles selon une direction donnée.
+     * Les sorties des deux salles sont mises à jour en conséquence.
+     * @param a salle d'origine
+     * @param b salle à connecter
+     * @param dir direction de la connexion de a vers b
+     */
     private void connectRooms(Room a, Room b, Room.Direction dir) {
         //lie deux salle en settant la sortie de la salle a avec la direction et lasortie de la salle b avec la direction opposée
         Room.Direction opposite = opposite(dir);
@@ -134,7 +155,13 @@ public class DungeonMapService {
         b.setExit(opposite, a);
     }
 
-    private Point move(Point pos, Room.Direction dir) {
+    /**
+     * Calcule la nouvelle position après déplacement depuis une position donnée dans une direction donnée.
+     * @param pos position actuelle
+     * @param dir direction du déplacement
+     * @return nouvelle position sous forme d'un Point
+     */
+    Point move(Point pos, Room.Direction dir) {
         //modifie les coordonnées x et y en fonction de la direction que l'on prend
         switch (dir) {
             case NORTH: return new Point(pos.x, pos.y + 1);
@@ -145,6 +172,11 @@ public class DungeonMapService {
         return pos;
     }
 
+    /**
+     * Retourne la direction opposée à celle donnée.
+     * @param dir direction initiale
+     * @return direction opposée
+     */
     public Room.Direction opposite(Room.Direction dir) {
         switch (dir) {
             case NORTH: return Room.Direction.SOUTH;
@@ -187,6 +219,10 @@ public class DungeonMapService {
     gestion du respawn des coffres et des monstres
      */
 
+    /**
+     * Génère et place des coffres dans des salles éligibles (sans coffre).
+     * @param count nombre de coffres à générer
+     */
     private void spawnChests(int count) {
         //vérifie que la salle n'a pas déjà un coffre
         List<Room> eligibleRooms = roomGrid.values().stream()
@@ -199,6 +235,10 @@ public class DungeonMapService {
         }
     }
 
+    /**
+     * Génère un coffre dans une salle donnée avec un item aléatoire.
+     * @param room salle où spawn le coffre
+     */
     private void spawnChestInRoom(Room room) {
         Rarity rarity = getRandomRarity();
         List<Item> items = itemLoaderService.findByRarity(rarity);
@@ -209,6 +249,10 @@ public class DungeonMapService {
         }
     }
 
+    /**
+     * Génère et place des monstres dans des salles éligibles (sans monstre).
+     * @param count nombre de monstres à générer
+     */
     private void spawnMonsters(int count) {
         List<Room> eligibleRooms = roomGrid.values().stream()
                 .filter(room -> room.getMonster() == null)
@@ -220,13 +264,20 @@ public class DungeonMapService {
         }
     }
 
+    /**
+     * Génère un monstre dans une salle donnée.
+     * @param room salle où spawn le monstre
+     */
     private void spawnMonsterInRoom(Room room) {
         room.setMonster(MonsterFactory.generateRandomMonster());
         room.setHasMonster(true);
     }
 
-    //toutes les 60 secondes, on exécute cette méthode qui gère le respawn
-    @Scheduled(fixedRate = 60000) // toutes les 60 secondes
+    /**
+     * Méthode planifiée exécutée toutes les 60 secondes pour gérer le respawn des coffres et monstres.
+     * Elle maintient un certain ratio minimum de coffres et monstres sur la carte.
+     */
+    @Scheduled(fixedRate = 60000) // //toutes les 60 secondes, on exécute cette méthode qui gère le respawn
     public void manageRespawn() {
         int totalRooms = roomGrid.size();
         int chestCount = 0;

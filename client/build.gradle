@@ -5,6 +5,12 @@ plugins {
 group = 'be.helha.poo3'
 version = '1.0-SNAPSHOT'
 
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
 repositories {
     mavenCentral()
 }
@@ -12,6 +18,20 @@ repositories {
 dependencies {
     testImplementation platform('org.junit:junit-bom:5.10.0')
     testImplementation 'org.junit.jupiter:junit-jupiter'
+
+    implementation 'com.googlecode.lanterna:lanterna:3.1.1'
+    implementation 'com.squareup.okhttp3:okhttp:4.9.3' // pour les appels HTTP
+    implementation 'com.google.code.gson:gson:2.8.9'   // pour parser les JSON
+
+    implementation 'com.google.code.gson:gson:2.10.1'
+    implementation 'org.javassist:javassist:3.29.2-GA'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.0'
+    implementation 'com.fasterxml.jackson.core:jackson-annotations:2.15.0'
+    implementation 'com.googlecode.lanterna:lanterna:3.1.1'
+    implementation 'org.apache.httpcomponents:httpclient:4.5.14'
+    implementation 'org.mongodb:bson:4.3.1'
+    implementation 'org.mongodb:mongodb-driver-core:4.9.1'
+
 }
 
 test {

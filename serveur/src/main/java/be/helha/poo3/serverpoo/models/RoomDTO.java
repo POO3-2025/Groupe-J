@@ -4,16 +4,15 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class RoomDTO {
-    private String id;
-    private boolean hasChest;
-    private boolean hasMonster;
-    private Chest chest;
-    private Monster monster;
-    private List<String> exits;
+    private String id = null;
+    private boolean hasChest = false;
+    private boolean hasMonster = false;
+    private Monster monster = null;
+    private List<String> exits = null;
+    private boolean fight=false;
 
     public RoomDTO(Room room) {
         this.id = room.getId();
-        this.chest = room.getChest();
         this.monster = room.getMonster();
         this.hasChest = (room.getChest() != null);
         this.hasMonster = (room.getMonster() != null);
@@ -22,12 +21,16 @@ public class RoomDTO {
                 .collect(Collectors.toList());
     }
 
+    public RoomDTO(boolean fight) {
+        this.fight=true;
+    }
+
     // Getters nécessaires pour que Jackson sérialise correctement
     public String getId() { return id; }
     public boolean isHasChest() { return hasChest; }
     public boolean isHasMonster() { return hasMonster; }
-    public Chest getChest() { return chest; }
     public Monster getMonster() { return monster; }
     public List<String> getExits() { return exits; }
+    public boolean isFight(){ return fight; }
 }
 

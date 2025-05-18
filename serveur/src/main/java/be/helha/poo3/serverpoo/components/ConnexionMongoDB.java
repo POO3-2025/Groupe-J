@@ -1,34 +1,78 @@
 package be.helha.poo3.serverpoo.components;
 
-import be.helha.poo3.serverpoo.configuration.MongoConfig;
-import com.mongodb.client.*;
+import be.helha.poo3.serverpoo.configuration.ConfigurationDB;
+import be.helha.poo3.serverpoo.configuration.ConfigurationDB.Databases.Details;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoClients;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
 import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import org.bson.Document;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
+/**
+ * Composant responsable de la connexion à MongoDB à partir des paramètres
+ * définis dans le fichier de configuration JSON.
+ */
 @Component
 public class ConnexionMongoDB {
-    private final MongoConfig config;
-    protected MongoCollection<Document> collection;
-    private MongoClient mongoClient;
 
-    public ConnexionMongoDB(MongoConfig config) {
-        this.config = config;
+    private final ConfigurationDB configurationDB;
+    private MongoClient mongoClient;
+    private MongoDatabase mongoDatabase;
+
+    // Clé d’environnement utilisée pour charger la configuration appropriée
+    private static final String ENV_KEY = "production";
+
+    public ConnexionMongoDB(ConfigurationDB configurationDB) {
+        this.configurationDB = configurationDB;
     }
 
+    /**
+     * Initialise la connexion à MongoDB en utilisant la configuration correspondant à ENV_KEY.
+     */
     @PostConstruct
     public void init() {
-        String fullUri = String.format("mongodb://%s:%s@localhost:27017", config.getUsername(), config.getPassword());
-        mongoClient = MongoClients.create(fullUri);
-        MongoDatabase database = mongoClient.getDatabase(config.getDb());
-        this.collection = database.getCollection(config.getCollection());
-        System.out.println("Connected to " + config.getDb() + "/" + config.getCollection());
+        try {
+            Details config = configurationDB.getDatabases().getMongoDB().get(ENV_KEY);
+
+            String uri = String.format(
+                    "mongodb://%s:%s@%s:%d",
+                    config.getUser(),
+                    config.getPassword(),
+                    config.getHost(),
+                    config.getPort()
+            );
+
+            mongoClient = MongoClients.create(uri);
+            mongoDatabase = mongoClient.getDatabase(config.getDatabase());
+
+            System.out.println("Connecté à MongoDB : " + config.getDatabase());
+        } catch (Exception e) {
+            System.err.println("Erreur de connexion à MongoDB : " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
-    public MongoCollection<Document> getCollection() {
-        return collection;
+    /**
+     * Retourne une collection MongoDB à partir de son nom.
+     *
+     * @param name Nom de la collection à récupérer.
+     * @return La collection Mongo correspondante.
+     */
+    public MongoCollection<Document> getCollection(String name) {
+        return mongoDatabase.getCollection(name);
+    }
+
+    /**
+     * Ferme proprement la connexion au client MongoDB.
+     */
+    @PreDestroy
+    public void close() {
+        if (mongoClient != null) {
+            mongoClient.close();
+            System.out.println("Connexion MongoDB fermée.");
+        }
     }
 }
-

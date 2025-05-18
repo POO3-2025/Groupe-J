@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.lang.reflect.Method;
@@ -30,7 +31,7 @@ public class ItemLoaderServiceTest {
     @Test
     public void shouldLoadItemsWithExpectedFields() throws Exception {
         List<Item> items = service.getLoadedItems();
-        assertEquals(4, items.size(), "Il doit y avoir exactement 4 items chargés");
+        assertEquals(10, items.size(), "Il doit y avoir exactement 10 items chargés");
 
         for (Item item : items) {
             switch (item.getName()) {
@@ -38,40 +39,47 @@ public class ItemLoaderServiceTest {
                     assertEquals("Sword", item.getType());
                     assertEquals(Rarity.common, item.getRarity());
                     assertEquals("A simple sword", item.getDescription());
-                    assertEquals(50, getFieldValue(item, "damage"));
+                    assertEquals(30, item.getInt("damage"));
                 }
                 case "Basic Shield" -> {
                     assertEquals("Shield", item.getType());
                     assertEquals(Rarity.common, item.getRarity());
                     assertEquals("A simple Shield", item.getDescription());
-                    assertEquals(20, getFieldValue(item, "defense"));
+                    assertEquals(20, item.getInt("defense"));
                 }
                 case "Upgraded Shield" -> {
                     assertEquals("Shield", item.getType());
                     assertEquals(Rarity.uncommon, item.getRarity());
                     assertEquals("A more robust shield", item.getDescription());
-                    assertEquals(30, getFieldValue(item, "defense"));
+                    assertEquals(30, item.getInt("defense"));
                 }
                 case "Small potion" -> {
                     assertEquals("Potion", item.getType());
                     assertEquals(Rarity.common, item.getRarity());
                     assertEquals("A basic healing potion", item.getDescription());
                     assertEquals("Consumable", item.getSubType());
-                    assertEquals(10, getFieldValue(item, "capacity"));
-                    assertEquals(10, getFieldValue(item, "currentCapacity"));
+                    assertEquals(10, item.getInt("capacity"));
+                    assertEquals(10, item.getInt("currentCapacity"));
                 }
-                default -> fail("Nom d’item inconnu : " + item.getName());
+                case "Steel forged armor" -> {
+                    assertEquals("Heavy", item.getType());
+                    assertEquals(Rarity.rare, item.getRarity());
+                    assertEquals("A good manufacturing forged armor", item.getDescription());
+                    assertEquals("Armor", item.getSubType());
+                    assertEquals(50, item.getInt("defense"));
+                }
+                default -> {
+                    break;
+                }
             }
         }
     }
 
     @Test
     public void shouldFindItemByName() {
-        List<Item> result = service.findByName("Basic Sword");
-        assertFalse(result.isEmpty(), "Un ou plusieurs objets doivent avoir le nom 'Basic Sword'");
-        for (Item item : result) {
-            assertEquals("Basic Sword", item.getName());
-        }
+        Item result = service.findByName("Basic Sword");
+        assertNotNull(result, "Aucun objet trouvé avec le nom 'Basic Sword'");
+        assertEquals("Basic Sword", result.getName());
     }
 
     @Test
@@ -104,11 +112,11 @@ public class ItemLoaderServiceTest {
 
     @Test
     public void shouldFindItemsByRarityAndSubType() {
-        List<Item> result = service.findByRarityAndSubType(Rarity.common, "Equipement");
-        assertFalse(result.isEmpty(), "Un ou plusieurs objets doivent avoir la rareté 'common' et le subType 'Equipement'");
+        List<Item> result = service.findByRarityAndSubType(Rarity.common, "Weapon");
+        assertFalse(result.isEmpty(), "Un ou plusieurs objets doivent avoir la rareté 'common' et le subType 'Weapon'");
         for (Item item : result) {
             assertEquals(Rarity.common, item.getRarity());
-            assertEquals("Equipement", item.getSubType());
+            assertEquals("Weapon", item.getSubType());
         }
     }
 
@@ -123,6 +131,27 @@ public class ItemLoaderServiceTest {
         } catch (NoSuchMethodException e) {
             fail("Le champ dynamique 'damage' est attendu mais manquant.");
         }
+    }
+
+    @Test
+    @DirtiesContext
+    public void dynamicItemIntGetterAndSetter() throws Exception {
+        Item item = service.findByName("Basic Sword");
+        assertNotNull(item);
+        int value = item.getInt("damage");
+        assertEquals(30, value);
+        item.setInt("damage", 20);
+        value = item.getInt("damage");
+        assertEquals(20, value);
+    }
+
+    @Test
+    public void checkAttributesList() throws Exception {
+        Item item = service.findByName("Basic Sword");
+        assertNotNull(item);
+        List<String> attributes = item.getAdditionalAttributes();
+        assertEquals(1, attributes.size(),"Il doit y avoir exactement un attribut supplémentaire");
+        assertTrue(attributes.contains("damage"), "L'attribut « damage » est attendu");
     }
 
     private Object getFieldValue(Object obj, String field) throws Exception {

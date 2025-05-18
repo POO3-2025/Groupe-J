@@ -6,6 +6,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 public class ItemController {
@@ -17,7 +19,10 @@ public class ItemController {
     }
 
     @GetMapping("/items")
-    public List<Item> getAllItems() {
-        return itemLoaderService.getLoadedItems();
+    public List<Map<String, Object>> getAllItems() {
+        return itemLoaderService.getLoadedItems()
+                .stream()
+                .map(Item::getMap)
+                .collect(Collectors.toList());
     }
 }
