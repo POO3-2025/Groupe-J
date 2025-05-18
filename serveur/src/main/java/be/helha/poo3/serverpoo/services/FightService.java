@@ -172,7 +172,10 @@ public class FightService {
             if (character == null) throw new RuntimeException("Character not in session");
             Inventory inventory = inventoryService.getInventory(new ObjectId(character.getInventoryId()));
             if (inventory == null) throw new RuntimeException("Inventory not found");
-            if (inventory.getItems().size() > 9) throw new InventoryIOException("Too many items in inventory", 3);
+            if (inventory.getItems().size() > 9) {
+                pvmFights.remove(pvmFight);
+                throw new InventoryIOException("Too many items in inventory", 3);
+            }
             Item reward = getReward(characterId);
             pvmFights.remove(pvmFight);
             inventoryService.addItemToInventory(inventory.getId(),reward.getId());

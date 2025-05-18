@@ -176,6 +176,7 @@ public class ExplorationView {
                 try {
                     mainWindow.setVisible(false);
                     new PvMFightView(gui, screen).mainWindow(null);
+                    updateMainWindowContent();
                     mainWindow.setVisible(true);
                 } catch (IOException e) {
                     e.printStackTrace();
