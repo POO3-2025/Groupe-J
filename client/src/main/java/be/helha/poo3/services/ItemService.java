@@ -14,11 +14,22 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.*;
 
+/**
+ * Service statique pour la gestion des objets (items) du jeu.
+ * Permet de charger dynamiquement des items à partir d'une source JSON (API ou fichier),
+ * de générer dynamiquement leurs classes avec DynamicClassGenerator,
+ * et de récupérer les items par nom ou identifiant.
+ */
 public class ItemService {
     private static final List<Item> items = new ArrayList<>();
     private static final Map<Item, ObjectId> itemIds = new HashMap<>();
     private static String rawJsonContent;
 
+    /**
+     * Initialise les items depuis l'API distante.
+     *
+     * @throws Exception en cas d'erreur de requête ou de parsing
+     */
     public static void initialize() throws Exception {
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
@@ -27,16 +38,29 @@ public class ItemService {
                 .build();
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
-        rawJsonContent = response.body(); // ➡️ stockage brut
+        rawJsonContent = response.body(); // stockage brut
         initializeFromJsonString(rawJsonContent);
     }
 
+    /**
+     * Initialise les items à partir d’un fichier JSON local.
+     *
+     * @param filePath chemin vers le fichier JSON
+     * @throws Exception en cas de problème de lecture ou de parsing
+     */
     public static void initializeFromJsonFile(String filePath) throws Exception {
         ObjectMapper mapper = new ObjectMapper();
         rawJsonContent = mapper.readTree(new File(filePath)).toString();
         initializeFromJsonString(rawJsonContent);
     }
 
+    /**
+     * Initialise les items à partir d’une chaîne JSON brute.
+     * Génère dynamiquement les classes d'items selon leur type.
+     *
+     * @param jsonContent le contenu JSON des items
+     * @throws Exception en cas d'erreur de génération ou d'instanciation
+     */
     public static void initializeFromJsonString(String jsonContent) throws Exception {
         items.clear();
         itemIds.clear();
@@ -91,6 +115,7 @@ public class ItemService {
         }
     }
 
+
     public static String getRawJsonContent() {
         return rawJsonContent;
     }
@@ -99,6 +124,12 @@ public class ItemService {
         return items;
     }
 
+    /**
+     * Recherche un item par son nom.
+     *
+     * @param name nom de l'item
+     * @return l'item correspondant ou null s’il n’existe pas
+     */
     public static Item getItemByName(String name) {
         return items.stream()
                 .filter(item -> item.getName().equalsIgnoreCase(name))
@@ -106,6 +137,12 @@ public class ItemService {
                 .orElse(null);
     }
 
+    /**
+     * Recherche un item par son identifiant (String).
+     *
+     * @param id identifiant sous forme de chaîne
+     * @return l'item correspondant ou null
+     */
     public static Item getItemById(String id) {
         try {
             ObjectId searchId = new ObjectId(id);
@@ -115,6 +152,12 @@ public class ItemService {
         }
     }
 
+    /**
+     * Recherche un item par son identifiant (ObjectId).
+     *
+     * @param id identifiant MongoDB
+     * @return l'item correspondant ou null
+     */
     public static Item getItemById(ObjectId id) {
         return itemIds.entrySet().stream()
                 .filter(entry -> entry.getValue().equals(id))

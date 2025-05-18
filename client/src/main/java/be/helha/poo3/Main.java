@@ -1,7 +1,6 @@
 package be.helha.poo3;
 
-import be.helha.poo3.services.ExplorationService;
-import be.helha.poo3.views.ExplorationView;
+
 import be.helha.poo3.views.LoginView;
 import com.googlecode.lanterna.TerminalSize;
 import com.googlecode.lanterna.gui2.*;

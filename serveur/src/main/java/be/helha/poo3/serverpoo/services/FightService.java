@@ -12,6 +12,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
+/**
+ * Service gérant les combats Player vs Monster (PVM) dans le jeu.
+ * Ce service permet de créer des combats, gérer les tours, récupérer les résultats,attribuer des récompenses, et terminer les combats.
+ * Il utilise plusieurs services pour accéder aux inventaires, charger les items,gérer la carte du donjon et les personnages en jeu.
+ */
 @Primary
 @Service
 public class FightService {
@@ -48,6 +53,15 @@ public class FightService {
         return pvmFights.stream().filter(f -> f.getPlayer().getId() == playerId).findFirst().orElse(null);
     }
 
+    /**
+     * Exécute un tour de combat PVM pour un personnage selon l'action donnée.
+     * Met à jour la santé du personnage et supprime le personnage s'il est mort.
+     *
+     * @param characterId identifiant du personnage
+     * @param action action jouée lors du tour (ex: "attack", "defend")
+     * @return résultat du tour de combat avec états des personnages
+     * @throws RuntimeException si le combat n'existe pas ou est terminé
+     */
     public PVMFight.PvmTurnResult playPvmTurn(int characterId, String action) {
         PVMFight pvmFight = GetPvmFightByCharacterId(characterId);
         if (pvmFight == null) throw new RuntimeException("Fight not found");
@@ -64,6 +78,14 @@ public class FightService {
         return result;
     }
 
+    /**
+     * Crée un nouveau combat PVM pour un personnage donné dans la salle où il se trouve.
+     * Le combat est lancé contre le monstre présent dans la salle.
+     *
+     * @param characterId identifiant du personnage
+     * @return DTO contenant l'état initial du combat créé
+     * @throws RuntimeException si un combat est déjà en cours, ou si les données nécessaires sont absentes
+     */
     public PVMFightDTO createPvmFight(int characterId) {
         if (GetPvmFightByCharacterId(characterId) != null) throw new RuntimeException("A fight is already running");
         CharacterWithPos character = inGameCharacterService.getCharacterFromGame(characterId);
@@ -107,6 +129,14 @@ public class FightService {
         return new PVMFightDTO(fight.isFinished(),fight.getMonster().getCurrentHealth(),fight.getMonster().getType().getHealth(),fight.getPlayer().getCurrentHP(),fight.getPlayer().getMaxHP(),fight.getMonster().getName(),null,fight.getPlayer().getNom(),null);
     }
 
+    /**
+     * Récupère la récompense du combat terminé pour un personnage.
+     * Si aucun objet de récompense spécifique n'est défini, un item aléatoire est choisi selon la rareté du monstre.
+     *
+     * @param characterId identifiant du personnage
+     * @return l'objet récompense, ou null si aucun objet disponible
+     * @throws RuntimeException si le combat n'existe pas ou n'est pas terminé
+     */
     public Item getReward(int characterId){
         PVMFight pvmFight = GetPvmFightByCharacterId(characterId);
         if (pvmFight == null) throw new RuntimeException("Fight not found");
@@ -124,6 +154,16 @@ public class FightService {
         } else throw new RuntimeException("Fight is not finished");
     }
 
+    /**
+     * Termine un combat PVM pour un personnage, et ajoute la récompense dans l'inventaire si demandé.
+     * Vérifie que l'inventaire n'est pas plein avant l'ajout.
+     *
+     * @param characterId identifiant du personnage
+     * @param get true pour ajouter la récompense à l'inventaire, false sinon
+     * @return l'objet récompense ajouté ou null
+     * @throws RuntimeException si le combat n'existe pas ou n'est pas terminé, ou si le personnage n'est pas en session
+     * @throws InventoryIOException si l'inventaire est plein
+     */
     public Item endPvmFight(int characterId, boolean get) throws InventoryIOException {
         PVMFight pvmFight = GetPvmFightByCharacterId(characterId);
         if (pvmFight == null) throw new RuntimeException("PVMFight not found");

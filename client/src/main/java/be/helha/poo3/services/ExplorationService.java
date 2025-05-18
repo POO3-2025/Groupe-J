@@ -1,6 +1,6 @@
 package be.helha.poo3.services;
 
-import be.helha.poo3.models.CharacterWithPos;
+
 import be.helha.poo3.models.Item;
 import be.helha.poo3.models.RoomDTOClient;
 import be.helha.poo3.utils.UserSession;
@@ -12,13 +12,13 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
-
-import java.awt.*;
 import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.util.Scanner;
 
+
+/**
+ * Service permettant la gestion de l'exploration communiquant avec le backend.
+ * Contient des méthodes pour se déplacer, ouvrir un coffre,looter un objet.
+ */
 public class ExplorationService {
     private static final String API_URL = "http://localhost:8080/exploration";
 
@@ -26,6 +26,11 @@ public class ExplorationService {
 
     public ExplorationService(){ client = HttpClientBuilder.create().build(); }
 
+    /**
+     * Permet de récupérer la salle où se trouve le personnage
+     * @return une salle
+     * @throws IOException
+     */
     public RoomDTOClient getCurrentRoom() throws IOException{
         String accessToken = UserSession.getAccessToken();
         if (accessToken == null) {
@@ -46,23 +51,11 @@ public class ExplorationService {
         }
     }
 
-
-    /*public RoomDTOClient move (Object direction) throws IOException {
-        URL url = new URL(API_URL + "/move/" + direction);
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        connection.setRequestMethod("POST");
-        if (connection.getResponseCode() == 201) {
-            Scanner scanner = new Scanner(connection.getInputStream()).useDelimiter("\\A");
-            String response = scanner.hasNext() ? scanner.next() : "";
-            ObjectMapper mapper = new ObjectMapper();
-            return mapper.readValue(response, RoomDTOClient.class);
-        } else {
-            throw new IOException("Erreur HTTP: " + connection.getResponseCode());
-        }
-    }
-
+    /**
+     * Permet d'ouvrir un coffre pour voir lobjet qu'il contient
+     * @return un objet
+     * @throws IOException
      */
-
     public Item openChest() throws IOException{
         String accessToken = UserSession.getAccessToken();
         if (accessToken == null) {
@@ -85,6 +78,11 @@ public class ExplorationService {
         }
     }
 
+    /**
+     * Permet de transférer un objet d'un coffre à l'inventaire d'un personnage
+     * @return true  ou false si l'inventaire est pleins
+     * @throws IOException
+     */
     public boolean getLootFromChest() throws IOException{
         String accessToken = UserSession.getAccessToken();
         if (accessToken == null) {
@@ -96,12 +94,8 @@ public class ExplorationService {
         try (CloseableHttpResponse response = (CloseableHttpResponse) client.execute(request)) {
             int statusCode = response.getStatusLine().getStatusCode();
             if (statusCode == 200) {
-                // Lire le contenu de la réponse
                 HttpEntity entity = response.getEntity();
                 String responseContent = EntityUtils.toString(entity);
-
-                // Convertir la chaîne de caractères en booléen
-                // Si la réponse est "true" ou "false", vous pouvez utiliser Boolean.parseBoolean
                 return Boolean.parseBoolean(responseContent);
             } else {
                 throw new IOException("Erreur HTTP: " + statusCode);
@@ -109,6 +103,12 @@ public class ExplorationService {
         }
     }
 
+    /**
+     * Permet de se déplacer entre les salles
+     * @param direction direction que l'on veut prendre (ex: "north","east",...)
+     * @return la salle vers laquelle on se déplace
+     * @throws IOException
+     */
     public RoomDTOClient move(String direction) throws IOException {
         String accessToken = UserSession.getAccessToken();
         if (accessToken == null) {
@@ -127,20 +127,7 @@ public class ExplorationService {
                 throw new IOException("Erreur HTTP: " + statusCode);
             }
         }
-
-
-        /*Point position = character.getPosition();
-        switch (direction) {
-            case "north" -> character.setPosition(new Point(position.x, position.y + 1));
-            case "south" -> character.setPosition(new Point(position.x, position.y - 1));
-            case "east"  -> character.setPosition(new Point(position.x + 1, position.y));
-            case "west"  -> character.setPosition(new Point(position.x - 1, position.y));
-        }
-
-         */
-
     }
-
 
 }
 

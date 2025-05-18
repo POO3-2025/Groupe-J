@@ -15,6 +15,11 @@ import org.apache.http.util.EntityUtils;
 import java.io.IOException;
 import java.util.Map;
 
+/**
+ * Service pour la gestion des combats joueur vs monstre (PVM).
+ * Permet d'initier un combat, de jouer un tour et de récupérer le résultat final.
+ * Toutes les requêtes nécessitent un token d’accès utilisateur.
+ */
 public class PVMFightService {
     private static final String API_URL = Config.getBaseUrl()+"/fight";
 
@@ -26,6 +31,12 @@ public class PVMFightService {
         this.client = HttpClientBuilder.create().build();
     }
 
+    /**
+     * Démarre un nouveau combat PVM pour le joueur connecté.
+     *
+     * @return un objet PVMFightDTO représentant le combat en cours
+     * @throws IOException en cas d'erreur réseau ou d'accès
+     */
     public PVMFightDTO startFight() throws IOException {
         String accessToken = UserSession.getAccessToken();
         if (accessToken == null) {
@@ -48,6 +59,13 @@ public class PVMFightService {
         }
     }
 
+    /**
+     * Joue un tour de combat avec l'action spécifiée (attaque, défense, etc.).
+     *
+     * @param action l’action à effectuer par le joueur
+     * @return le résultat du tour sous forme de PvmTurnResult
+     * @throws IOException en cas de problème de communication
+     */
     public PvmTurnResult playTurn(String action) throws IOException {
         String accessToken = UserSession.getAccessToken();
         if (accessToken == null) {
@@ -70,6 +88,12 @@ public class PVMFightService {
         }
     }
 
+    /**
+     * Termine le combat PVM et récupère le résumé (récompenses, état final, etc.).
+     *
+     * @return une map contenant les résultats du combat
+     * @throws IOException en cas de problème lors de la requête
+     */
     public Map<String,Object> endFight() throws IOException {
         String accessToken = UserSession.getAccessToken();
         if (accessToken == null) {

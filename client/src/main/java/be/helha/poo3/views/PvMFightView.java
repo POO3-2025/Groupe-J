@@ -13,6 +13,11 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Classe représentant l'interface de combat joueur contre monstre (PvM).
+ * Elle gère les actions disponibles (attaquer, esquiver, bloquer) et affiche
+ * l'état actuel du combat (PV du joueur et du monstre, actions effectuées, etc.).
+ */
 public class PvMFightView {
     private final WindowBasedTextGUI gui;
     private final Screen screen;
@@ -25,6 +30,14 @@ public class PvMFightView {
         lanternaUtils = new LanternaUtils(gui, screen);
     }
 
+    /**
+     * Affiche la fenêtre principale du combat.
+     * Si le combat n'a pas encore commencé, il démarre un nouveau combat via PVMFightService.
+     * Si un résultat est fourni, il met à jour l'état du combat.
+     *
+     * @param result Résultat du tour précédent.
+     * @throws IOException en cas d'erreur lors du chargement ou d'affichage.
+     */
     public void mainWindow(PvmTurnResult result) throws IOException{
         BasicWindow window = new BasicWindow("Combat");
         window.setHints(List.of(Window.Hint.CENTERED));
@@ -136,6 +149,13 @@ public class PvMFightView {
         gui.addWindowAndWait(window);
     }
 
+    /**
+     * Ajoute un label à un panel si la valeur n'est pas nulle.
+     *
+     * @param panel Panel dans lequel insérer le label.
+     * @param label Texte du label.
+     * @param value Valeur à afficher (si non nulle).
+     */
     private void addLabelIfExists(Panel panel, String label, Object value) {
         if (value != null) {
             panel.addComponent(new Label(label + value));

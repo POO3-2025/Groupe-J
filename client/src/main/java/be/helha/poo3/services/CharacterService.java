@@ -19,6 +19,10 @@ import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
+/**
+ * Service permettant d'interagir avec l'API liée aux personnages (Character).
+ * Utilise les requêtes HTTP pour effectuer des opérations CRUD sur les personnages.
+ */
 public class CharacterService {
     private static final String API_URL = Config.getBaseUrl()+ "/character";
 
@@ -30,6 +34,12 @@ public class CharacterService {
         client = HttpClientBuilder.create().build();
     }
 
+    /**
+     * Récupère la liste des personnages appartenant à l'utilisateur connecté.
+     *
+     * @return une liste de GameCharacter
+     * @throws IOException en cas d'erreur de connexion ou d'erreur d'authentification
+     */
     public List<GameCharacter> getUserCharacter() throws IOException {
         String accessToken = UserSession.getAccessToken();
         if (accessToken == null) {
@@ -57,6 +67,12 @@ public class CharacterService {
         }
     }
 
+    /**
+     * Récupère le personnage actuellement utilisé dans le jeu avec sa position.
+     *
+     * @return une instance de CharacterWithPos
+     * @throws IOException en cas d'erreur réseau ou de réponse invalide
+     */
     public CharacterWithPos getInGameCharacter() throws IOException {
         HttpGet request = new HttpGet(API_URL + "/myCharacter");
         request.addHeader("Content-Type", "application/json");
@@ -73,6 +89,14 @@ public class CharacterService {
         }
     }
 
+    /**
+     * Met à jour le nom d'un personnage donné.
+     *
+     * @param characterId l'identifiant du personnage à modifier
+     * @param newName le nouveau nom à attribuer
+     * @return true si la mise à jour a réussi, false sinon
+     * @throws IOException en cas de problème lors de l'appel HTTP
+     */
     public boolean updateCharacterName(int characterId, String newName) throws IOException {
         String json = "{\"newName\":\"" + newName.replace("\"", "\\\"") + "\"}";
 
@@ -93,6 +117,13 @@ public class CharacterService {
         return false;
     }
 
+    /**
+     * Supprime un personnage via l'API.
+     *
+     * @param characterId l'identifiant du personnage à supprimer
+     * @return true si la suppression a réussi, false sinon
+     * @throws IOException en cas de problème réseau
+     */
     public boolean deleteCharacter(int characterId) throws IOException {
         HttpDelete request = new HttpDelete(API_URL + "/" + characterId);
         request.addHeader("Content-Type", "application/json");
@@ -108,6 +139,13 @@ public class CharacterService {
         return false;
     }
 
+    /**
+     * Ajoute un nouveau personnage à l'utilisateur connecté.
+     *
+     * @param character un objet CharacterDTO contenant les statistiques du personnage
+     * @return true si le personnage a été ajouté avec succès, false si les données sont invalides
+     * @throws IOException si une erreur survient pendant la communication avec l'API
+     */
     public boolean addCharacter(CharacterDTO character) throws IOException {
         if (character == null ||
                 (character.getConstitution() + character.getDexterity() + character.getStrength()) > 5) {
@@ -132,6 +170,13 @@ public class CharacterService {
         return false;
     }
 
+    /**
+     * Sélectionne un personnage comme personnage actif dans le jeu.
+     *
+     * @param characterId l'identifiant du personnage à sélectionner
+     * @return le personnage sélectionné avec ses informations de position
+     * @throws IOException si une erreur se produit lors de la requête
+     */
     public CharacterWithPos choiceCharacter(int characterId) throws IOException {
         HttpPost request = new HttpPost(API_URL + "/choice/" + characterId);
         request.addHeader("Content-Type", "application/json");
@@ -149,6 +194,12 @@ public class CharacterService {
         }
     }
 
+    /**
+     * Permet à l'utilisateur de quitter la partie en cours.
+     *
+     * @return true si la sortie de jeu est réussie, false sinon
+     * @throws IOException en cas d'erreur réseau
+     */
     public boolean leaveGame() throws IOException {
         HttpDelete request = new HttpDelete(API_URL + "/leave");
         request.addHeader("Content-Type", "application/json");

@@ -20,6 +20,10 @@ public class LoginView {
         this.screen = screen;
     }
 
+    /**
+     * Affiche la fenêtre de connexion avec les champs de saisie
+     * pour le nom d'utilisateur et le mot de passe.
+     */
     public void show() {
         // Création d'une fenêtre avec le titre "Connexion"
         BasicWindow loginWindow = new BasicWindow("Connexion");
@@ -69,6 +73,9 @@ public class LoginView {
         gui.addWindowAndWait(loginWindow);
     }
 
+    /**
+     * Ferme l'application proprement.
+     */
     private void quit() {
         AuthService.logout();
         try {

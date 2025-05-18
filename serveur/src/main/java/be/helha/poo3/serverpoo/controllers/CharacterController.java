@@ -9,8 +9,6 @@ import be.helha.poo3.serverpoo.services.InGameCharacterService;
 import be.helha.poo3.serverpoo.services.UserService;
 import be.helha.poo3.serverpoo.utils.JwtUtils;
 import io.jsonwebtoken.JwtException;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

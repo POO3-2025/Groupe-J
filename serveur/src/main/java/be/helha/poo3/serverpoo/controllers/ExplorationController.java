@@ -17,6 +17,12 @@ import org.springframework.web.bind.annotation.*;
 import java.awt.*;
 import java.util.Map;
 
+/**
+ * Contrôleur REST pour la gestion des actions liées à l'exploration dans le jeu.
+ * Ce contrôleur fournit des endpoints pour récupérer la salle actuelle du personnage,déplacer le personnage dans une direction donnée,
+ *ouvrir un coffre dans la salle actuelle et récupérer le butin d'un coffre ouvert.
+ * Toutes les actions nécessitent un token JWT valide transmis via l'en-tête Authorization.
+ */
 @RestController
 @RequestMapping("/exploration")
 public class ExplorationController {
@@ -33,6 +39,13 @@ public class ExplorationController {
     @Autowired
     private InGameCharacterService characterService;
 
+    /**
+     * Récupère la salle actuelle dans laquelle se trouve le personnage de l'utilisateur authentifié.
+     *
+     * @param authHeader l'en-tête HTTP Authorization contenant le token JWT (ex: "Bearer <token>")
+     * @return ResponseEntity avec la salle actuelle sous forme d'objet RoomDTO si authentification réussie,
+     *         ou une réponse 401 Unauthorized avec un message d'erreur si le token est invalide.
+     */
     @GetMapping("/room")
     public ResponseEntity<?> getCurrentRoom(@RequestHeader(value = "Authorization", required = false) String authHeader) {
         String token = authHeader.substring(7);
@@ -48,6 +61,15 @@ public class ExplorationController {
 
     }
 
+    /**
+     * Déplace le personnage de l'utilisateur authentifié dans une direction donnée.
+     *
+     * @param direction la direction du déplacement (ex: "north", "south", "east", "west")
+     * @param authHeader l'en-tête HTTP Authorization contenant le token JWT (ex: "Bearer <token>")
+     * @return ResponseEntity avec la nouvelle salle sous forme de RoomDTO si déplacement réussi,
+     *         une réponse 400 Bad Request si la salle est inaccessible,
+     *         ou une réponse 401 Unauthorized si le token est invalide ou le personnage introuvable.
+     */
     @PostMapping("/move/{direction}")
     public ResponseEntity<?> move(@PathVariable String direction,@RequestHeader(value = "Authorization", required = false) String authHeader) {
         String token = authHeader.substring(7);
@@ -73,6 +95,14 @@ public class ExplorationController {
 
     }
 
+    /**
+     * Ouvre un coffre dans la salle actuelle du personnage de l'utilisateur authentifié.
+     *
+     * @param authHeader l'en-tête HTTP Authorization contenant le token JWT (ex: "Bearer <token>")
+     * @return ResponseEntity avec l'objet Item contenu dans le coffre si ouverture réussie,
+     *         une réponse 400 Bad Request si aucun coffre n'est présent,
+     *         ou une réponse 401 Unauthorized si le token est invalide ou le personnage introuvable.
+     */
     @GetMapping("/openChest")
     public ResponseEntity<?> openChest(@RequestHeader(value = "Authorization", required = false) String authHeader) {
         String token = authHeader.substring(7);
@@ -100,7 +130,13 @@ public class ExplorationController {
         }
     }
 
-
+    /**
+     * Récupère le butin du coffre ouvert par le personnage de l'utilisateur authentifié.
+     *
+     * @param authHeader l'en-tête HTTP Authorization contenant le token JWT (ex: "Bearer <token>")
+     * @return ResponseEntity avec un booléen indiquant si le loot a été récupéré avec succès,
+     *         ou une réponse 401 Unauthorized si le token est invalide ou le personnage introuvable.
+     */
     @PostMapping("/getLootFromChest")
     public ResponseEntity<?> getLootFromChest(@RequestHeader(value = "Authorization", required = false) String authHeader) {
         String token = authHeader.substring(7);

@@ -11,6 +11,10 @@ import java.io.IOException;
 import java.util.List;
 import java.util.regex.Pattern;
 
+/**
+ * Vue responsable de la création d'un personnage dans l'interface utilisateur en mode texte,
+ * utilisant la bibliothèque Lanterna.
+ */
 public class CharacterCreationView {
 
     private final WindowBasedTextGUI gui;
@@ -24,7 +28,11 @@ public class CharacterCreationView {
         this.screen = screen;
     }
 
-
+    /**
+     * Affiche la fenêtre de création d'un nouveau personnage.
+     * Permet à l'utilisateur de saisir un nom, une classe et des caractéristiques (Constitution, Dextérité, Force),
+     * tout en respectant une limite de points totaux.
+     */
     public void show() {
         LanternaUtils lu = new LanternaUtils(gui, screen);
         BasicWindow window = new BasicWindow("Créer un personnage");
@@ -145,12 +153,21 @@ public class CharacterCreationView {
         gui.addWindowAndWait(window);
     }
 
+    /**
+     * Crée un champ de saisie de statistiques numériques avec une validation (0 à 5).
+     * @return Un TextBox Lanterna avec validation de saisie.
+     */
     private TextBox numericBox() {
         return new TextBox()
                 .setValidationPattern(STAT_PATTERN)
                 .setPreferredSize(new TerminalSize(2, 1));
     }
 
+    /**
+     * Analyse le contenu textuel d'un champ pour retourner un entier.
+     * @param box Le champ à analyser.
+     * @return La valeur entière du champ, ou 0 si invalide.
+     */
     private int parse(TextBox box) {
         try {
             return Integer.parseInt(box.getText());

@@ -1,13 +1,13 @@
 package be.helha.poo3.views;
 
-import be.helha.poo3.models.CharacterDTO;
+
 import be.helha.poo3.models.CharacterWithPos;
 import be.helha.poo3.models.Item;
 import be.helha.poo3.models.RoomDTOClient;
 import be.helha.poo3.services.CharacterService;
 import be.helha.poo3.services.ExplorationService;
 import be.helha.poo3.utils.LanternaUtils;
-import com.googlecode.lanterna.TerminalSize;
+
 import com.googlecode.lanterna.gui2.*;
 import com.googlecode.lanterna.gui2.Button;
 import com.googlecode.lanterna.gui2.Label;
@@ -17,9 +17,15 @@ import com.googlecode.lanterna.screen.Screen;
 
 import java.awt.*;
 import java.io.IOException;
-import java.util.ArrayList;
+
 import java.util.List;
 
+/**
+ * Classe représentant l'interface d'exploration dans le jeu.
+ * Elle permet au joueur d'interagir avec son environnement :
+ * se déplacer, attaquer des monstres, ouvrir des coffres,
+ * consulter l'inventaire ou quitter la partie.
+ */
 public class ExplorationView {
     private final WindowBasedTextGUI gui;
     private final Screen screen;
@@ -42,7 +48,11 @@ public class ExplorationView {
         this.lanternaUtils = new LanternaUtils(gui, screen);
     }
 
-
+    /**
+     * Affiche la vue principale de l'exploration, avec les options d'interaction disponibles.
+     *
+     * @throws IOException Si une erreur survient pendant l'affichage.
+     */
     public void show() throws IOException{
         mainWindow.setHints(List.of(Window.Hint.CENTERED));
         mainWindow.setTitle("Exploration");
@@ -52,6 +62,11 @@ public class ExplorationView {
         gui.addWindowAndWait(mainWindow);
     }
 
+    /**
+     * Ouvre un coffre dans la pièce courante et affiche son contenu.
+     *
+     * @throws IOException Si une erreur survient lors de l'ouverture du coffre.
+     */
     public void openChest() throws IOException {
         Panel chestContent = new Panel(new LinearLayout(Direction.VERTICAL));
 
@@ -98,6 +113,12 @@ public class ExplorationView {
         gui.updateScreen();
     }
 
+    /**
+     * Déplace le personnage dans la direction spécifiée (north, south, east, west).
+     *
+     * @param direction Direction vers laquelle se déplacer.
+     * @throws IOException Si une erreur survient pendant le déplacement.
+     */
     public void move(String direction) throws IOException {
         System.out.println("Déplacement demandé vers: " + direction);
         System.out.println("Position avant déplacement: " + this.character.getPosition());
@@ -115,6 +136,9 @@ public class ExplorationView {
         updateMainWindowContent();
     }
 
+    /**
+     * Permet au joueur de quitter la partie.
+     */
     public void leave() {
         try {
             if (characterService.leaveGame()) {
@@ -130,7 +154,11 @@ public class ExplorationView {
     }
 
 
-    //méthode mettant à jour l'affichage
+    /**
+     * Met à jour dynamiquement l'affichage de la fenêtre principale en fonction de l'état actuel du jeu.
+     *
+     * @throws IOException Si une erreur survient pendant la mise à jour.
+     */
     private void updateMainWindowContent() throws IOException {
         // Vider et reconstruire complètement le panel principal
         Panel mainPanel = new Panel(new LinearLayout(Direction.VERTICAL));

@@ -10,6 +10,10 @@ import java.awt.*;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Service d'exploration permettant la navigation d'un personnage dans le donjon.
+ * Gère la récupération des salles courantes, les déplacements, l'ouverture des coffres et la collecte d'objets.
+ */
 @Service
 public class ExplorationService {
 
@@ -28,6 +32,12 @@ public class ExplorationService {
         return new RoomDTO(room);
     }
 
+    /**
+     * Déplace un personnage dans une direction donnée si possible.
+     * @param character personnage à déplacer
+     * @param direction direction de déplacement
+     * @return nouvelle salle après déplacement, ou null si mouvement impossible
+     */
     public Room move(CharacterWithPos character, String direction) {
         Point position = character.getPosition();
         Room currentRoom = dungeonMapService.getRoomById(position.x + ":" + position.y);
@@ -52,7 +62,12 @@ public class ExplorationService {
         }
     }
 
-
+    /**
+     * Permet à un personnage d'ouvrir un coffre dans la salle courante.
+     * Si un coffre est présent, l'objet est transféré dans l'inventaire du joueur et le coffre est supprimé.
+     * @param character personnage qui ouvre le coffre
+     * @return true si coffre ouvert et objet récupéré, false sinon
+     */
     public Item openChest(CharacterWithPos character) {
         Point position = character.getPosition();
         Room room = dungeonMapService.getRoomById(position.x + ":" + position.y);
@@ -64,6 +79,11 @@ public class ExplorationService {
         }
     }
 
+    /**
+     * Permet à un personnage de récupérer l'objet contenu dans un coffre.
+     * @param character personnage qui ouvre le coffre
+     * @return true si l'objet a bien été récupéré, false si l'inventaire est pleins
+     */
     public boolean getLootFromChest(CharacterWithPos character) {
         Point position = character.getPosition();
         Room room = dungeonMapService.getRoomById(position.x + ":" + position.y);

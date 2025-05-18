@@ -14,6 +14,10 @@ import com.googlecode.lanterna.SGR;
 import java.io.IOException;
 import java.util.List;
 
+/**
+ * Vue qui affiche les détails d'un personnage sélectionné, avec options de renommage,
+ * suppression ou sélection pour jouer.
+ */
 public class CharacterDetailView {
 
     private final WindowBasedTextGUI gui;
@@ -29,6 +33,10 @@ public class CharacterDetailView {
         this.lanternaUtils = new LanternaUtils(gui, screen);
     }
 
+    /**
+     * Affiche la fenêtre principale de détails du personnage.
+     * Permet le renommage, la suppression ou la sélection pour le jeu.
+     */
     public void mainWindow() {
         BasicWindow window = new BasicWindow("Détails de " + character.getName());
         window.setHints(List.of(Window.Hint.CENTERED));
@@ -86,6 +94,10 @@ public class CharacterDetailView {
         gui.addWindowAndWait(window);
     }
 
+    /**
+     * Ouvre une popup pour renommer le personnage.
+     * @param currentWindow La fenêtre actuellement affichée, à rafraîchir si renommage effectué.
+     */
     private void renameCharacter(BasicWindow currentWindow) {
         String newName = lanternaUtils.openPopupWithInput("Renommer", "Nouveau nom :");
         if (newName == null || newName.isBlank() || newName.equals(character.getName())) {
@@ -105,6 +117,10 @@ public class CharacterDetailView {
         }
     }
 
+    /**
+     * Supprime le personnage après confirmation utilisateur.
+     * @param currentWindow La fenêtre active à fermer si suppression réussie.
+     */
     private void deleteCharacter(BasicWindow currentWindow) {
         boolean confirm = lanternaUtils.openConfirmationPopup("Confirmation", "Voulez vous supprimer ce personnage?");
         if (confirm) {
@@ -120,6 +136,10 @@ public class CharacterDetailView {
         }
     }
 
+    /**
+     * Sélectionne le personnage courant pour démarrer une session de jeu.
+     * @param parent La fenêtre à fermer lors de la transition vers l'exploration.
+     */
     private void choiceCharacter(BasicWindow parent) {
         try {
             CharacterWithPos character = characterService.choiceCharacter(this.character.getIdCharacter());
