@@ -1,6 +1,9 @@
 package be.helha.poo3;
 
 
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import be.helha.poo3.services.CharacterService;
 import be.helha.poo3.views.LoginView;
 import com.googlecode.lanterna.TerminalSize;
 import com.googlecode.lanterna.gui2.*;
@@ -20,6 +23,17 @@ public class Main {
             terminalFactory.setInitialTerminalSize(new TerminalSize(80, 24));
             // Ajout du SwingTerminal dans un SwingTerminalFrame
             SwingTerminalFrame terminal = terminalFactory.createSwingTerminal();
+            // création d'un listener permettant de forcer un sortie d'un personnage côté serveur en cas de fermeture de la fenêtre
+            terminal.addWindowListener(new WindowAdapter() {
+                @Override
+                public void windowClosing(WindowEvent e) {
+                    try {
+                        new CharacterService().leaveGame();
+                    } catch (Exception e1) {
+                        e1.printStackTrace();
+                    }
+                }
+            });
             terminal.setVisible(true);
             // Désactiver la redimension
             terminal.setResizable(false);

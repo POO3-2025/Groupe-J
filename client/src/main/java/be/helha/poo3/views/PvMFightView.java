@@ -80,11 +80,11 @@ public class PvMFightView {
             buttonActionPanel.addComponent(new EmptySpace());
             buttonActionPanel.addComponent(new Button("Finir le combat", () -> {
                 try {
-                    fightService.endFight();
+                    Map<String,Object> item = fightService.endFight();
                     window.close();
 
                     if (fight.getPlayerHp() > 0) {
-                        lanternaUtils.openMessagePopup("Bravo", "Vous avez gagné ce combat");
+                        lanternaUtils.openMessagePopup("Bravo", item.containsKey("name")? "Vous avez gagné " + item.get("name"): "Vous avez gagné !");
                         window.close();
                     } else {
                         lanternaUtils.openMessagePopup("RIP", "Vous y arriverez la prochaine fois");
