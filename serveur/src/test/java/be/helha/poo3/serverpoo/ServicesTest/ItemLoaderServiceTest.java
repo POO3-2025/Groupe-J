@@ -31,7 +31,7 @@ public class ItemLoaderServiceTest {
     @Test
     public void shouldLoadItemsWithExpectedFields() throws Exception {
         List<Item> items = service.getLoadedItems();
-        assertEquals(10, items.size(), "Il doit y avoir exactement 10 items chargés");
+        assertEquals(20, items.size(), "Il doit y avoir exactement 20 items chargés");
 
         for (Item item : items) {
             switch (item.getName()) {

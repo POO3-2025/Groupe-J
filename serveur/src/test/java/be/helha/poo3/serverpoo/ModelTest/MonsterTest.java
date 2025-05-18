@@ -11,27 +11,27 @@ class MonsterTest {
     void monsterShouldBeAliveWhenCreated() {
         Monster slime = new Monster(Monsters.slime);
         assertTrue(slime.isAlive());
-        assertEquals(10, slime.getCurrentHealth());
+        assertEquals(20, slime.getCurrentHealth());
     }
 
     @Test
     void monsterShouldTakeDamage() {
         Monster skeleton = new Monster(Monsters.skeleton);
         skeleton.takeDamage(10); // 10 - 4 (defense) = 6 dégats
-        assertEquals(9, skeleton.getCurrentHealth()); // 15 - 6 = 9 hp
+        assertEquals(40, skeleton.getCurrentHealth()); // 15 - 6 = 9 hp
     }
 
     @Test
     void monsterShouldNotTakeNegativeDamage() {
         Monster zombie = new Monster(Monsters.zombie);
         zombie.takeDamage(3); // 3 - 4 (defense) = 0 dégats
-        assertEquals(20, zombie.getCurrentHealth());
+        assertEquals(50, zombie.getCurrentHealth());
     }
 
     @Test
     void monsterShouldDieWhenHealthReachesZero() {
         Monster orc = new Monster(Monsters.orc);
-        orc.takeDamage(100);
+        orc.takeDamage(200);
         assertFalse(orc.isAlive());
         assertTrue(orc.getCurrentHealth() <= 0);
     }
@@ -40,7 +40,7 @@ class MonsterTest {
     void getMonsterNameAndStats() {
         Monster goblin = new Monster(Monsters.goblin);
         assertEquals("Goblin", goblin.getName());
-        assertEquals(5, goblin.getDamage());
+        assertEquals(35, goblin.getDamage());
         assertEquals(Monsters.goblin.getRarity(), goblin.getRarity());
     }
 }
