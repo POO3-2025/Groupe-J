@@ -162,9 +162,13 @@ public class ExplorationView {
     private void updateMainWindowContent() throws IOException {
         // Vider et reconstruire complètement le panel principal
         Panel mainPanel = new Panel(new LinearLayout(Direction.VERTICAL));
-
+        RoomDTOClient room = null;
         // Récupérer l'état actuel de la salle
-        RoomDTOClient room = explorationService.getCurrentRoom();
+        try {
+            room = explorationService.getCurrentRoom();
+        } catch (IOException e) {
+        }
+         if (room == null) mainWindow.close();
 
         mainPanel.addComponent(new Label("Tu arrives dans une salle sombre, que fais-tu ?"));
 

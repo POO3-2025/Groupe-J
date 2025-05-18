@@ -152,7 +152,7 @@ public class CharacterDetailView {
             }
 
         } catch (IOException | RuntimeException e) {
-            lanternaUtils.openMessagePopup("Erreur", e.getMessage());
+            //lanternaUtils.openMessagePopup("Erreur", e.getMessage());
         }
 
     }
