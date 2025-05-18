@@ -54,6 +54,7 @@ public class ItemView {
         addLabelIfExists(panel, "Dégâts", item.get("damage"));
         addLabelIfExists(panel, "Défense", item.get("defense"));
         addLabelIfExists(panel, "Puissance", item.get("power"));
+        addLabelIfExists(panel, "Agilité", item.get("agility"));
         addLabelIfExists(panel, "Capacité max.", item.get("capacity"));
         addLabelIfExists(panel, "Capacité actuelle", item.get("currentCapacity"));
         addLabelIfExists(panel, "Effet", item.get("effect"));
